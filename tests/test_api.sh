@@ -330,6 +330,8 @@ req GET /api/rentals "" "$TOKEN";            check "List rentals -> 200" 200
 req GET /api/rentals;                        check "List rentals without token -> 401" 401
 req GET "/api/rentals/customer/$CUST1" "" "$TOKEN"
 check "Rentals by customer -> 200" 200
+req GET "/api/rentals/customer/$CUST1"
+check "Customer history WITHOUT token -> 200 (mobile app)" 200
 req GET "/api/rentals/customer/999999" "" "$TOKEN"
 check "Rentals for missing customer -> 404" 404
 req GET "/api/rentals/$RENT3" "" "$TOKEN";   check "Get rental by id -> 200" 200
@@ -399,6 +401,44 @@ req DELETE "/api/cars/$PCAR" "" "$TOKEN"
 check "Delete the car -> 204" 204
 [ "$(imgcount)" = "$FILES0" ] && { PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  Car's photo file removed with the car"; } \
   || { FAIL=$((FAIL+1)); FAILURES+=("photo left after car delete"); echo -e "  \033[31mFAIL\033[0m  files: $(imgcount) expected $FILES0"; }
+
+# ---- 13. reopening a closed rental --------------------------------------------
+section "13. Reopen guard (closed rental -> Active)"
+# RENT3 is Cancelled and belongs to CAR2. Put CAR2 under maintenance first:
+reqform PUT "/api/cars/$CAR2" "$TOKEN" model=Sonata brand=Hyundai pricePerDay=120 status=UnderMaintenance
+check "Put car2 under maintenance -> 200" 200
+req PUT "/api/rentals/$RENT3" "{\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\",\"status\":\"Active\"}" "$TOKEN"
+check "BUGFIX: reopen onto a maintenance car -> 409" 409
+reqform PUT "/api/cars/$CAR2" "$TOKEN" model=Sonata brand=Hyundai pricePerDay=120 status=Available
+check "Car2 back to Available -> 200" 200
+req PUT "/api/rentals/$RENT3" "{\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\",\"status\":\"Active\"}" "$TOKEN"
+check "Reopen the cancelled rental -> 200" 200
+req GET "/api/cars/$CAR2"
+assert_json "Car2 is Rented after the reopen" "['status']" "Rented"
+req PUT "/api/rentals/$RENT3/cancel" "" "$TOKEN"
+check "Cancel it again -> 200" 200
+req GET "/api/cars/$CAR2"
+assert_json "Car2 released again" "['status']" "Available"
+
+# ---- 14. dashboard statistics --------------------------------------------------
+section "14. Dashboard statistics"
+req GET /api/statistics
+check "Statistics without token -> 401" 401
+req GET "/api/statistics?months=99" "" "$TOKEN"
+check "Statistics with months out of range -> 400" 400
+req GET /api/statistics "" "$TOKEN"
+check "Statistics -> 200" 200
+assert_json "cars.total"              "['cars']['total']" "3"
+assert_json "cars.available"          "['cars']['available']" "2"
+assert_json "cars.underMaintenance"   "['cars']['underMaintenance']" "1"
+assert_json "cars.rented"             "['cars']['rented']" "0"
+assert_json "customers.total"         "['customers']['total']" "2"
+assert_json "rentals.total"           "['rentals']['total']" "2"
+assert_json "rentals.active"          "['rentals']['active']" "0"
+assert_json "rentals.completed"       "['rentals']['completed']" "1"
+assert_json "rentals.cancelled"       "['rentals']['cancelled']" "1"
+assert_num  "revenue.total = the completed rental" "['revenue']['total']" "3325"
+assert_num  "monthlyRevenue has this month's bar"  "['monthlyRevenue'][0]['revenue']" "3325"
 
 # ---- summary ---------------------------------------------------------------
 printf '\n\033[1m══════════════════════════════════════════════════\033[0m\n'

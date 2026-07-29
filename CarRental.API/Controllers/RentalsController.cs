@@ -22,8 +22,13 @@ public class RentalsController(
         Ok((await rentalRepo.GetAllAsync()).ToDtos());
 
     /// <summary>A customer's rental history — used by the mobile app's "My rentals" screen.</summary>
+    /// <remarks>
+    /// Anonymous on purpose: booking (POST /api/Rentals) is anonymous because the mobile
+    /// app has no customer login, so viewing one's own rentals must be too — otherwise
+    /// the app could create rentals it can never display.
+    /// </remarks>
     [HttpGet("customer/{customerId:int}")]
-    [Authorize]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(IEnumerable<RentalDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<RentalDto>>> GetByCustomer(int customerId)
@@ -163,6 +168,16 @@ public class RentalsController(
                 detail: "Another active rental for this car overlaps those dates.",
                 statusCode: StatusCodes.Status409Conflict,
                 title: "Dates unavailable");
+
+        // BUGFIX: reopening a closed rental (status back to Active) used to flip the car
+        // to "Rented" unconditionally — even a car that had been moved to maintenance.
+        var reopening = !RentalStatus.IsOpen(existing.Status) && dto.Status == RentalStatus.Active;
+        if (reopening && existing.Car?.Status == CarStatus.UnderMaintenance)
+            return Problem(
+                detail: "This rental's car is under maintenance, so the rental cannot be reopened. " +
+                        "Set the car back to Available first.",
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Car under maintenance");
 
         var updated = await rentalRepo.UpdateAsync(id, dto.StartDate, dto.EndDate, dto.Status);
         if (updated is null)

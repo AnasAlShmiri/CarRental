@@ -50,6 +50,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IRentalRepository, RentalRepository>();
+builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
 
 // ── Car image storage ─────────────────────────────────────────────────────────
 // Files land in wwwroot/uploads and are served by UseStaticFiles() further down.
@@ -159,6 +160,7 @@ builder.Services.AddSwaggerGen(options =>
             * `GET /api/Cars/available` — only cars that are free to rent
             * `GET /api/Cars/{id}` — a single car
             * `POST /api/Rentals` — a customer booking their own rental
+            * `GET /api/Rentals/customer/{customerId}` — a customer's own rental history
             * `GET /health` — service health probe
 
             ### 3. Endpoints that DO need a token
@@ -167,6 +169,7 @@ builder.Services.AddSwaggerGen(options =>
             * Completing, cancelling, updating or deleting a rental
             * Listing or reading rentals
             * Everything under `/api/Customers` — these records hold personal data
+            * `GET /api/Statistics` — dashboard numbers (fleet, rentals, revenue chart)
 
             ### 4. Things worth knowing
 

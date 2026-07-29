@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ── CarRental: runtime content ────────────────────────────────────────────────
+# Uploaded car photos are runtime data, not source code — keep them out of git.
+CarRental.API/wwwroot/uploads/*
+!CarRental.API/wwwroot/uploads/.gitkeep
+
+# Local SQLite databases created when running with DatabaseProvider=Sqlite
+*.db
+*.db-shm
+*.db-wal

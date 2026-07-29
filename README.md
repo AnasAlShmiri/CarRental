@@ -81,7 +81,7 @@ Authorization: Bearer <token>
 | النقاط | الحماية |
 |---|---|
 | `GET /api/cars`, `/api/cars/available`, `/api/cars/{id}` | مفتوحة (كتالوج عام للتطبيق) |
-| `POST /api/rentals` | مفتوحة (العميل يحجز) |
+| `POST /api/rentals` · `GET /api/rentals/customer/{id}` | مفتوحة (العميل يحجز ويرى إيجاراته — التطبيق بلا تسجيل دخول) |
 | باقي عمليات السيارات والإيجارات | تحتاج رمزاً |
 | **كل** عمليات العملاء | تحتاج رمزاً (بيانات شخصية) |
 
@@ -111,13 +111,18 @@ Authorization: Bearer <token>
 | الطريقة | المسار | الوصف |
 |---|---|---|
 | GET | `/api/rentals` | الكل |
-| GET | `/api/rentals/customer/{customerId}` | سجل عميل |
+| GET | `/api/rentals/customer/{customerId}` | سجل عميل — **مفتوحة** (شاشة «إيجاراتي» في التطبيق بلا تسجيل دخول) |
 | GET | `/api/rentals/{id}` | إيجار واحد |
 | POST | `/api/rentals` | حجز (السعر يُحسب في الخادم) |
 | PUT | `/api/rentals/{id}` | تعديل الفترة |
 | PUT | `/api/rentals/{id}/complete` | **إكمال — يُحرِّر السيارة** |
 | PUT | `/api/rentals/{id}/cancel` | **إلغاء — يُحرِّر السيارة** |
 | DELETE | `/api/rentals/{id}` | حذف (يُحرِّر السيارة) |
+
+### الإحصائيات (للوحة التحكم)
+| الطريقة | المسار | الوصف |
+|---|---|---|
+| GET | `/api/statistics?months=6` | أرقام اللوحة: الأسطول، العملاء، الإيجارات، الإيراد الكلي، وسلسلة الإيراد الشهري للرسوم البيانية |
 
 ### الحالات المسموحة
 - **السيارة:** `Available` · `Rented` · `UnderMaintenance`
@@ -191,7 +196,17 @@ dotnet run --project CarRental.API
 
 ---
 
-## 9. الاختبار
+## 9. توثيق Postman
+
+مجموعة Postman كاملة في: `docs/CarRental.postman_collection.json`
+
+- استوردها في Postman: **Import** ← اختر الملف.
+- نفّذ طلب **Auth → Login** أولاً — سكربت الاختبار فيه يحفظ الرمز تلقائياً في متغيّر `{{token}}`، وكل الطلبات المحمية تستخدمه مباشرة.
+- طلبات السيارات جاهزة بصيغة form-data — اختر الصورة من **Body → form-data → image → Select Files**.
+
+---
+
+## 10. الاختبار
 
 يوجد سكربت اختبار شامل يضرب كل نقطة نهاية بطلبات HTTP حقيقية ويتحقق من رموز الحالة
 ومن قواعد العمل: `tests/test_api.sh`
