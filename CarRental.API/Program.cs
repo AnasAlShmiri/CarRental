@@ -108,31 +108,54 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "CarRental API",
         Version = "v1",
+        // Swagger UI's markdown renderer does not support tables, so this description
+        // deliberately uses only headings, bold text and bullet lists — anything else
+        // collapses into one unreadable run of text.
         Description = """
             Car rental management API — Clean Architecture + Repository Pattern.
 
-            ### Getting a token (needed for admin operations)
+            ### 1. Get a token (needed for admin operations)
 
-            1. Run **POST /api/Auth/login** with `{ "username": "admin", "password": "..." }`
-               (the password is the `AdminUser:Password` value from configuration).
-            2. Copy the `token` value from the response.
-            3. Click the green **Authorize** button at the top of this page and paste the token.
-               Paste the token **only** — do not type `Bearer` in front of it, Swagger adds it.
+            **Step 1** — Run `POST /api/Auth/login` below with this body:
 
-            ### What needs a token
+            `{ "username": "admin", "password": "Admin@12345" }`
 
-            | Endpoints | Token |
-            |---|---|
-            | `GET /api/Cars`, `/api/Cars/available`, `/api/Cars/{id}` | Not required — public catalogue |
-            | `POST /api/Rentals` | Not required — a customer books their own rental |
-            | All other Cars / Rentals operations | Required |
-            | Everything under `/api/Customers` | Required — personal data |
+            That is the development default, stored in `appsettings.json` under
+            `AdminUser`. Change it before deploying.
 
-            ### Notes
+            **Step 2** — Copy the `token` value from the response — the long string
+            only, without the surrounding quotes.
 
-            * `totalPrice` is always calculated by the server; never send it.
-            * On **PUT /api/Cars/{id}**, leave `status` out to keep the car's current status.
-            * Every error response is a ProblemDetails object whose `detail` explains the cause.
+            **Step 3** — Click the green **Authorize** button at the top-right of this
+            page, paste the token, then press Authorize and Close.
+
+            Paste the token **on its own**. Do not type `Bearer` in front of it —
+            Swagger adds that automatically, and typing it yourself breaks the header.
+
+            ### 2. Endpoints that need NO token
+
+            * `GET /api/Cars` — the full catalogue
+            * `GET /api/Cars/available` — only cars that are free to rent
+            * `GET /api/Cars/{id}` — a single car
+            * `POST /api/Rentals` — a customer booking their own rental
+            * `GET /health` — service health probe
+
+            ### 3. Endpoints that DO need a token
+
+            * Creating, updating or deleting a car
+            * Completing, cancelling, updating or deleting a rental
+            * Listing or reading rentals
+            * Everything under `/api/Customers` — these records hold personal data
+
+            ### 4. Things worth knowing
+
+            * `totalPrice` is always calculated by the server. Never send it.
+            * On `PUT /api/Cars/{id}`, leave `status` out of the body to keep the car's
+              current status. Sending it is the only way to change it.
+            * `imageUrl` expects a web path such as `/uploads/car1.jpg`, not a local
+              Windows path. Put the file in `wwwroot/uploads/` first.
+            * Every error response is a ProblemDetails object whose `detail` field
+              explains what went wrong and how to fix it.
             """
     });
 
