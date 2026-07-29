@@ -1,0 +1,28 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in the solution.
+  -->
+
+  <PropertyGroup>
+    <!--
+      NuGet's vulnerability audit contacts https://api.nuget.org on every restore.
+      On a machine with no route to nuget.org (offline, campus firewall, proxy) that
+      lookup fails and emits:
+
+          warning NU1900: Error occurred while getting package vulnerability data ...
+
+      The warning is harmless — the build still succeeds from the local package cache —
+      but it is written to stderr, and Visual Studio's Package Manager Console runs with
+      $ErrorActionPreference = 'Stop'. That turns the warning into a terminating error and
+      aborts commands such as Update-Database, which is confusing and looks like a real
+      failure.
+
+      Turning the audit off removes that noise. Re-enable it (set this to true, or delete
+      the line) whenever the machine can reach nuget.org and you want vulnerability
+      warnings back.
+    -->
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+
+</Project>

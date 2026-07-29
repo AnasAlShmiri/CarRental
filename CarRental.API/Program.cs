@@ -108,7 +108,32 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "CarRental API",
         Version = "v1",
-        Description = "Car rental management API (Clean Architecture + Repository Pattern)."
+        Description = """
+            Car rental management API — Clean Architecture + Repository Pattern.
+
+            ### Getting a token (needed for admin operations)
+
+            1. Run **POST /api/Auth/login** with `{ "username": "admin", "password": "..." }`
+               (the password is the `AdminUser:Password` value from configuration).
+            2. Copy the `token` value from the response.
+            3. Click the green **Authorize** button at the top of this page and paste the token.
+               Paste the token **only** — do not type `Bearer` in front of it, Swagger adds it.
+
+            ### What needs a token
+
+            | Endpoints | Token |
+            |---|---|
+            | `GET /api/Cars`, `/api/Cars/available`, `/api/Cars/{id}` | Not required — public catalogue |
+            | `POST /api/Rentals` | Not required — a customer books their own rental |
+            | All other Cars / Rentals operations | Required |
+            | Everything under `/api/Customers` | Required — personal data |
+
+            ### Notes
+
+            * `totalPrice` is always calculated by the server; never send it.
+            * On **PUT /api/Cars/{id}**, leave `status` out to keep the car's current status.
+            * Every error response is a ProblemDetails object whose `detail` explains the cause.
+            """
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -165,6 +190,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
+
+// Gives a self-explanatory JSON body to error responses the framework returns empty
+// (401, 403, unmatched-route 404, 405, ...). Without this an unauthenticated call just
+// gets a bare 401 with Content-Length: 0, which reads like a silent failure.
+app.UseProblemDetailsForEmptyResponses();
 
 // Only force HTTPS when an HTTPS endpoint actually exists. Redirecting unconditionally
 // makes plain-HTTP calls (curl, Postman, the http launch profile) return 307s that hide
