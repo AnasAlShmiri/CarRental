@@ -32,6 +32,17 @@ req() {
   BODY=$(tr -d '\000' < /tmp/_body 2>/dev/null | head -c 2000)
 }
 
+# reqform METHOD PATH TOKEN [field=value | field=@file ...]  -> multipart/form-data
+reqform() {
+  local method="$1" path="$2" token="$3"; shift 3
+  local args=(-sS -o /tmp/_body -w '%{http_code}' -X "$method" "$BASE$path" --max-time 30)
+  [ -n "$token" ] && args+=(-H "Authorization: Bearer $token")
+  local f
+  for f in "$@"; do args+=(-F "$f"); done
+  STATUS=$(curl "${args[@]}")
+  BODY=$(tr -d '\000' < /tmp/_body 2>/dev/null | head -c 2000)
+}
+
 # check LABEL EXPECTED_STATUS
 check() {
   local label="$1" expected="$2"
@@ -101,6 +112,24 @@ LATER=$(date -u -d '+20 days' +%Y-%m-%d)
 LATER_END=$(date -u -d '+25 days' +%Y-%m-%d)
 YESTERDAY=$(date -u -d '-1 day' +%Y-%m-%d)
 
+# ---- image fixtures (used by Cars form tests) ---------------------------------
+python3 - <<'PYFIX'
+import zlib, struct
+def png(path, w=8, h=8):
+    def ch(t,d):
+        c=t+d
+        return struct.pack(">I",len(d))+c+struct.pack(">I",zlib.crc32(c)&0xffffffff)
+    raw=b"".join(b"\x00"+bytes((30,90,200))*w for _ in range(h))
+    open(path,"wb").write(b"\x89PNG\r\n\x1a\n"
+        + ch(b"IHDR",struct.pack(">IIBBBBB",w,h,8,2,0,0,0))
+        + ch(b"IDAT",zlib.compress(raw)) + ch(b"IEND",b""))
+png("/tmp/t_car.png")
+open("/tmp/t_car.jpg","wb").write(bytes.fromhex("FFD8FF")+b"\xE0\x00\x10JFIF\x00"+b"\x00"*40+b"\xFF\xD9")
+open("/tmp/t_fake.png","wb").write(b"not an image at all, just text")
+png("/tmp/t_mismatch.jpg")
+open("/tmp/t_huge.png","wb").write(open("/tmp/t_car.png","rb").read()+b"\x00"*(6*1024*1024))
+PYFIX
+
 # ---- 0. infrastructure -------------------------------------------------------
 section "0. Infrastructure"
 req GET /health;                             check "GET /health" 200
@@ -125,27 +154,33 @@ req GET /api/auth/me;                        check "GET /api/auth/me without tok
 # ---- 2. authorization enforcement -------------------------------------------
 section "2. Authorization enforcement"
 req GET /api/cars;                           check "Cars list is public (anonymous)" 200
-req POST /api/cars '{"model":"X","brand":"Y","pricePerDay":10}'
+reqform POST /api/cars "" model=X brand=Y pricePerDay=10
 check "Create car without token -> 401" 401
 req GET /api/customers;                      check "Customers require token -> 401" 401
 
 # ---- 3. cars CRUD ------------------------------------------------------------
 section "3. Cars CRUD + validation"
-req POST /api/cars '{"model":"Camry 2024","brand":"Toyota","pricePerDay":150.00,"imageUrl":"/uploads/camry.jpg"}' "$TOKEN"
-check "Create car -> 201" 201
+reqform POST /api/cars "$TOKEN" "model=Camry 2024" brand=Toyota pricePerDay=150.00 image=@/tmp/t_car.png
+check "Create car + photo in ONE request -> 201" 201
 CAR1=$(jqv "['id']")
 assert_json "New car status is Available"    "['status']" "Available"
-assert_json "ImageUrl persisted (spec req.)" "['imageUrl']" "/uploads/camry.jpg"
+IMG_CAR1=$(jqv "['imageUrl']")
+case "$IMG_CAR1" in /uploads/*.png)
+  PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  Photo stored, imageUrl auto-filled ($IMG_CAR1)";;
+*) FAIL=$((FAIL+1)); FAILURES+=("imageUrl not set on create: $IMG_CAR1")
+   echo -e "  \033[31mFAIL\033[0m  imageUrl = $IMG_CAR1";; esac
+req GET "$IMG_CAR1";                         check "Uploaded photo is served over HTTP -> 200" 200
 
-req POST /api/cars '{"model":"Sonata","brand":"Hyundai","pricePerDay":120}' "$TOKEN"
-check "Create 2nd car -> 201" 201
+reqform POST /api/cars "$TOKEN" model=Sonata brand=Hyundai pricePerDay=120
+check "Create 2nd car (no photo) -> 201" 201
 CAR2=$(jqv "['id']")
+assert_json "No photo => imageUrl is null"   "['imageUrl']" "None"
 
-req POST /api/cars '{"model":"","brand":"Kia","pricePerDay":100}' "$TOKEN"
+reqform POST /api/cars "$TOKEN" model= brand=Kia pricePerDay=100
 check "Create car with empty model -> 400" 400
-req POST /api/cars '{"model":"Rio","brand":"Kia","pricePerDay":0}' "$TOKEN"
+reqform POST /api/cars "$TOKEN" model=Rio brand=Kia pricePerDay=0
 check "Create car with price 0 -> 400" 400
-req POST /api/cars '{"model":"Rio","brand":"Kia","pricePerDay":-5}' "$TOKEN"
+reqform POST /api/cars "$TOKEN" model=Rio brand=Kia pricePerDay=-5
 check "Create car with negative price -> 400" 400
 
 req GET "/api/cars/$CAR1";                   check "Get car by id -> 200" 200
@@ -186,11 +221,12 @@ req GET "/api/cars/$CAR1"
 assert_json "Car is now Rented"              "['status']" "Rented"
 
 # This is the exact operation that used to silently reset status to Available.
-req PUT "/api/cars/$CAR1" '{"model":"Camry 2024","brand":"Toyota","pricePerDay":175.00}' "$TOKEN"
+reqform PUT "/api/cars/$CAR1" "$TOKEN" "model=Camry 2024" brand=Toyota pricePerDay=175.00
 check "Edit rented car's price -> 200" 200
 assert_json "BUG#2 FIXED: still Rented after price edit" "['status']" "Rented"
+assert_json "Photo survives the price edit"  "['imageUrl']" "$IMG_CAR1"
 
-req PUT "/api/cars/$CAR1" '{"model":"Camry 2024","brand":"Toyota","pricePerDay":175.00,"status":"Bogus"}' "$TOKEN"
+reqform PUT "/api/cars/$CAR1" "$TOKEN" "model=Camry 2024" brand=Toyota pricePerDay=175.00 status=Bogus
 check "Update car with invalid status -> 400" 400
 
 # ---- 6. rental creation validation ------------------------------------------
@@ -273,15 +309,15 @@ req DELETE /api/cars/999999 "" "$TOKEN";     check "Delete missing car -> 404" 4
 req DELETE /api/customers/999999 "" "$TOKEN"; check "Delete missing customer -> 404" 404
 
 # a car with no rentals at all should delete cleanly
-req POST /api/cars '{"model":"Disposable","brand":"Test","pricePerDay":50}' "$TOKEN"
+reqform POST /api/cars "$TOKEN" model=Disposable brand=Test pricePerDay=50
 CAR3=$(jqv "['id']")
 req DELETE "/api/cars/$CAR3" "" "$TOKEN";    check "Delete car with no rentals -> 204" 204
 
 # ---- 10b. maintenance status blocks renting ---------------------------------
 section "10b. UnderMaintenance blocks renting"
-req POST /api/cars '{"model":"Yaris","brand":"Toyota","pricePerDay":90}' "$TOKEN"
+reqform POST /api/cars "$TOKEN" model=Yaris brand=Toyota pricePerDay=90
 CAR4=$(jqv "['id']")
-req PUT "/api/cars/$CAR4" '{"model":"Yaris","brand":"Toyota","pricePerDay":90,"status":"UnderMaintenance"}' "$TOKEN"
+reqform PUT "/api/cars/$CAR4" "$TOKEN" model=Yaris brand=Toyota pricePerDay=90 status=UnderMaintenance
 check "Set car to UnderMaintenance -> 200" 200
 assert_json "Status is UnderMaintenance"     "['status']" "UnderMaintenance"
 req POST /api/rentals "{\"carId\":$CAR4,\"customerId\":$CUST2,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
@@ -300,81 +336,69 @@ req GET "/api/rentals/$RENT3" "" "$TOKEN";   check "Get rental by id -> 200" 200
 assert_json "Rental embeds car summary"      "['car']['brand']" "Hyundai"
 assert_json "Rental embeds customer summary" "['customer']['name']" "Anas S."
 
-# ---- 12. car image upload ---------------------------------------------------
-section "12. Car photo upload"
+# ---- 12. car photo lifecycle (single-form flow) ------------------------------
+section "12. Car photo lifecycle (same-form upload)"
 UPDIR="${UPLOADS_DIR:-CarRental.API/wwwroot/uploads}"
 imgcount() { ls "$UPDIR" 2>/dev/null | grep -cE '\.(png|jpg|jpeg|gif|webp)$'; }
 
-# build fixtures: a real png, a real jpg, text renamed .png, png renamed .jpg, oversized
-python3 - <<'PYFIX'
-import zlib, struct
-def png(path, w=8, h=8):
-    def ch(t,d):
-        c=t+d
-        return struct.pack(">I",len(d))+c+struct.pack(">I",zlib.crc32(c)&0xffffffff)
-    raw=b"".join(b"\x00"+bytes((30,90,200))*w for _ in range(h))
-    open(path,"wb").write(b"\x89PNG\r\n\x1a\n"
-        + ch(b"IHDR",struct.pack(">IIBBBBB",w,h,8,2,0,0,0))
-        + ch(b"IDAT",zlib.compress(raw)) + ch(b"IEND",b""))
-png("/tmp/t_car.png")
-open("/tmp/t_car.jpg","wb").write(bytes.fromhex("FFD8FF")+b"\xE0\x00\x10JFIF\x00"+b"\x00"*40+b"\xFF\xD9")
-open("/tmp/t_fake.png","wb").write(b"not an image at all, just text")
-png("/tmp/t_mismatch.jpg")
-open("/tmp/t_huge.png","wb").write(open("/tmp/t_car.png","rb").read()+b"\x00"*(6*1024*1024))
-PYFIX
+# rejected image => the car must NOT be created
+reqform POST /api/cars "$TOKEN" model=PhotoFail brand=Test pricePerDay=10 image=@/tmp/t_fake.png
+check "Create with text-file-as-.png -> 400 (magic bytes)" 400
+req GET /api/cars
+NOFAIL=$(python3 -c "
+import json;d=json.load(open('/tmp/_body'))
+print('absent' if all(c['model']!='PhotoFail' for c in d) else 'present')")
+[ "$NOFAIL" = "absent" ] && { PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  Rejected image => car NOT created"; } \
+  || { FAIL=$((FAIL+1)); FAILURES+=("car created despite rejected image"); echo -e "  \033[31mFAIL\033[0m  car exists"; }
 
-upload() {  # upload FILE CAR_ID -> sets STATUS/BODY
-  STATUS=$(curl -sS -o /tmp/_body -w '%{http_code}' --max-time 30 \
-    -X POST "$BASE/api/cars/$2/image" -H "Authorization: Bearer $TOKEN" -F "file=@$1")
-  BODY=$(tr -d '\000' < /tmp/_body 2>/dev/null | head -c 2000)
-}
+reqform POST /api/cars "$TOKEN" model=PhotoFail brand=Test pricePerDay=10 image=@/tmp/t_mismatch.jpg
+check "Create with PNG-renamed-.jpg -> 400 (format mismatch)" 400
+reqform POST /api/cars "$TOKEN" model=PhotoFail brand=Test pricePerDay=10 image=@/tmp/t_huge.png
+check "Create with 6 MB file -> 400 (size limit)" 400
 
-req POST /api/cars '{"model":"Photo Test","brand":"Test","pricePerDay":100}' "$TOKEN"
-check "Create car for photo tests -> 201" 201
+# happy path: car + photo in one request
+FILES0=$(imgcount)
+reqform POST /api/cars "$TOKEN" "model=Photo Test" brand=Test pricePerDay=100 image=@/tmp/t_car.png
+check "Create car + photo in one form -> 201" 201
 PCAR=$(jqv "['id']")
-
-upload /tmp/t_car.png "$PCAR";        check "Upload a valid PNG -> 200" 200
 IMG1=$(jqv "['imageUrl']")
-case "$IMG1" in /uploads/*.png) PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  imageUrl points into /uploads ($IMG1)";;
-  *) FAIL=$((FAIL+1)); FAILURES+=("bad imageUrl: $IMG1"); echo -e "  \033[31mFAIL\033[0m  imageUrl = $IMG1";; esac
+req GET "$IMG1";                      check "Photo served over HTTP -> 200" 200
 
-req GET "$IMG1";                      check "Uploaded file is served over HTTP -> 200" 200
-
-upload /tmp/t_fake.png "$PCAR";       check "Text file renamed .png -> 400 (magic-byte check)" 400
-upload /tmp/t_mismatch.jpg "$PCAR";   check "PNG renamed .jpg -> 400 (format mismatch)" 400
-upload /tmp/t_huge.png "$PCAR";       check "6 MB file -> 400 (size limit)" 400
-upload /tmp/t_car.png 999999;         check "Upload to a missing car -> 404" 404
-
-# replacing must delete the previous file
-upload /tmp/t_car.jpg "$PCAR";        check "Replace the photo -> 200" 200
+# PUT with a new file replaces and deletes the old one
+reqform PUT "/api/cars/$PCAR" "$TOKEN" "model=Photo Test" brand=Test pricePerDay=100 image=@/tmp/t_car.jpg
+check "Replace photo via the same PUT form -> 200" 200
 IMG2=$(jqv "['imageUrl']")
-req GET "$IMG1";                      check "Old file is gone after replace -> 404" 404
+req GET "$IMG1";                      check "Old file deleted after replace -> 404" 404
 
-# the bug: a price edit must NOT wipe the uploaded photo
-req PUT "/api/cars/$PCAR" '{"model":"Photo Test","brand":"Test","pricePerDay":250}' "$TOKEN"
-check "Edit price without imageUrl -> 200" 200
-assert_json "BUGFIX: photo survives a price edit" "['imageUrl']" "$IMG2"
+# PUT without an image keeps the photo (the bug that wiped it is fixed)
+reqform PUT "/api/cars/$PCAR" "$TOKEN" "model=Photo Test" brand=Test pricePerDay=250
+check "Edit price, image field left empty -> 200" 200
+assert_json "BUGFIX: photo survives the edit" "['imageUrl']" "$IMG2"
 
-# explicit clear
-req PUT "/api/cars/$PCAR" '{"model":"Photo Test","brand":"Test","pricePerDay":250,"imageUrl":""}' "$TOKEN"
-check "Clear photo with empty string -> 200" 200
-assert_json "imageUrl is null after explicit clear" "['imageUrl']" "None"
+# removeImage=true clears the photo AND deletes the file
+reqform PUT "/api/cars/$PCAR" "$TOKEN" "model=Photo Test" brand=Test pricePerDay=250 removeImage=true
+check "removeImage=true -> 200" 200
+assert_json "imageUrl null after removeImage"  "['imageUrl']" "None"
 
-# DELETE /image
-upload /tmp/t_car.png "$PCAR" >/dev/null
-req DELETE "/api/cars/$PCAR/image" "" "$TOKEN"
-check "DELETE /image -> 200" 200
-assert_json "imageUrl is null after DELETE /image" "['imageUrl']" "None"
+# PUT with image on a missing car: 404 and no file left behind
+FILES_BEFORE=$(imgcount)
+reqform PUT /api/cars/999999 "$TOKEN" model=X brand=Y pricePerDay=10 image=@/tmp/t_car.png
+check "PUT photo to a missing car -> 404" 404
+FILES_AFTER=$(imgcount)
+[ "$FILES_BEFORE" = "$FILES_AFTER" ] && { PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  No orphan file for a missing car"; } \
+  || { FAIL=$((FAIL+1)); FAILURES+=("orphan file: $FILES_BEFORE -> $FILES_AFTER"); echo -e "  \033[31mFAIL\033[0m  files $FILES_BEFORE -> $FILES_AFTER"; }
 
-# a real multipart upload with no Authorization header (json content-type would be a 415)
-STATUS=$(curl -sS -o /tmp/_body -w '%{http_code}' --max-time 30 \
-  -X POST "$BASE/api/cars/$PCAR/image" -F "file=@/tmp/t_car.png"); BODY=$(cat /tmp/_body)
-check "Upload without a token -> 401" 401
+# multipart without a token
+reqform POST /api/cars "" model=X brand=Y pricePerDay=10 image=@/tmp/t_car.png
+check "Form upload without a token -> 401" 401
 
-# deleting the car cleans up its file
-upload /tmp/t_car.png "$PCAR" >/dev/null
+# deleting the car cleans up its photo file
+reqform PUT "/api/cars/$PCAR" "$TOKEN" "model=Photo Test" brand=Test pricePerDay=250 image=@/tmp/t_car.png
+check "Give the car a photo again -> 200" 200
 req DELETE "/api/cars/$PCAR" "" "$TOKEN"
 check "Delete the car -> 204" 204
+[ "$(imgcount)" = "$FILES0" ] && { PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  Car's photo file removed with the car"; } \
+  || { FAIL=$((FAIL+1)); FAILURES+=("photo left after car delete"); echo -e "  \033[31mFAIL\033[0m  files: $(imgcount) expected $FILES0"; }
 
 # ---- summary ---------------------------------------------------------------
 printf '\n\033[1m══════════════════════════════════════════════════\033[0m\n'

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using CarRental.API.Errors;
 using CarRental.Application.Interfaces;
@@ -10,6 +11,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+
+// Form values (multipart/form-data) parse numbers using the server's culture.
+// Forcing invariant keeps "150.50" meaning the same price on any Windows locale
+// (an Arabic locale could otherwise read the decimal separator differently).
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -163,24 +170,26 @@ builder.Services.AddSwaggerGen(options =>
 
             ### 4. Things worth knowing
 
+            * The Cars endpoints take form fields (multipart/form-data), not JSON — that
+              is what lets the photo ride along in the same request. Customers and
+              Rentals take JSON as usual.
             * `totalPrice` is always calculated by the server. Never send it.
-            * On `PUT /api/Cars/{id}`, leave `status` out of the body to keep the car's
-              current status. Sending it is the only way to change it.
-            ### 5. Car photos
+            * On `PUT /api/Cars/{id}`, leave `status` empty to keep the car's current
+              status. Sending it is the only way to change it.
+            ### 5. Car photos — picked in the SAME form
 
-            To upload a picture from your computer, use `POST /api/Cars/{id}/image`.
-            Create the car first, then call that endpoint and pick the file — Swagger
-            shows a **Choose file** button for it. The server stores the file under
-            `wwwroot/uploads/` and fills in the car's `imageUrl` automatically.
+            `POST /api/Cars` and `PUT /api/Cars/{id}` take form fields, and the
+            **image** field shows a Choose-file button right in Swagger. One request:
+            fill in the car's details, pick the photo from your computer, press
+            Execute. The server stores the file under `wwwroot/uploads/` and fills in
+            `imageUrl` automatically.
 
             * Accepted: jpg, jpeg, png, gif, webp — up to 5 MB.
-            * The real format is verified from the file's header, so renaming a
-              document to `.jpg` is rejected.
-            * Uploading again replaces the old picture and deletes the old file.
-            * `DELETE /api/Cars/{id}/image` removes the photo.
-            * Do **not** put a local path such as `C:\Users\...\photo.png` in
-              `imageUrl` — browsers and the mobile app cannot read your disk. The field
-              holds a web path such as `/uploads/car1.jpg`, which the upload sets for you.
+            * The real format is verified from the file's bytes, so renaming a
+              document to `.jpg` is rejected — and the car is NOT created.
+            * On PUT: leave **image** empty to keep the current photo, pick a file to
+              replace it (the old file is deleted), or set **removeImage** to true to
+              delete it.
             * Every error response is a ProblemDetails object whose `detail` field
               explains what went wrong and how to fix it.
             """

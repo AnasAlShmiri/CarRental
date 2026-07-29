@@ -29,12 +29,6 @@ public interface ICarRepository
     /// </summary>
     Task<Car?> UpdateAsync(int id, string model, string brand, decimal pricePerDay, string? imageUrl, string? newStatus);
 
-    /// <summary>
-    /// Sets (or clears, when null) just the car's image URL. Returns the updated car,
-    /// or null when no car has that id.
-    /// </summary>
-    Task<Car?> SetImageUrlAsync(int id, string? imageUrl);
-
     Task<bool> DeleteAsync(int id);
 
     /// <summary>True when the car has a rental that is still Active (blocks deletion).</summary>

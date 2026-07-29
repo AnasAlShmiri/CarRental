@@ -1,3 +1,4 @@
+using CarRental.API.Contracts;
 using CarRental.Application.DTOs;
 using CarRental.Application.Interfaces;
 using CarRental.Application.Mapping;
@@ -58,138 +59,130 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
         return Ok(car.ToDto());
     }
 
+    /// <summary>
+    /// Creates a car. Pick the photo in the SAME form — the "image" field shows a
+    /// Choose-file button in Swagger. The server stores the file under wwwroot/uploads
+    /// and fills in imageUrl automatically.
+    /// </summary>
+    /// <remarks>
+    /// The image is optional. Accepted types: jpg, jpeg, png, gif, webp — up to 5 MB.
+    /// The real format is verified from the file's bytes, so renaming a document to
+    /// ".jpg" is rejected — and in that case the car is NOT created.
+    /// </remarks>
     [HttpPost]
     [Authorize]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(CarDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<CarDto>> Create(CarCreateDto dto)
+    public async Task<ActionResult<CarDto>> Create([FromForm] CarCreateForm form, CancellationToken ct)
     {
-        var created = await repo.CreateAsync(new Car
+        // Validate and store the photo BEFORE creating the car, so a bad file
+        // means no half-created row.
+        string? imageUrl = null;
+        if (form.Image is { Length: > 0 })
         {
-            Model = dto.Model,
-            Brand = dto.Brand,
-            PricePerDay = dto.PricePerDay,
-            ImageUrl = dto.ImageUrl
-        });
+            await using var stream = form.Image.OpenReadStream();
+            var outcome = await images.SaveAsync(stream, form.Image.FileName, form.Image.Length, ct);
 
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToDto());
+            if (!outcome.Success)
+                return Problem(
+                    detail: outcome.Error,
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Image rejected");
+
+            imageUrl = outcome.RelativeUrl;
+        }
+
+        try
+        {
+            var created = await repo.CreateAsync(new Car
+            {
+                Model = form.Model,
+                Brand = form.Brand,
+                PricePerDay = form.PricePerDay,
+                ImageUrl = imageUrl
+            });
+
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToDto());
+        }
+        catch
+        {
+            // The row was not saved — don't leave its photo behind on disk.
+            images.TryDelete(imageUrl);
+            throw;
+        }
     }
 
     /// <summary>
-    /// Updates a car. Omit "status" to keep the current one — an explicit value is the only
-    /// way to change it, which stops a price edit from silently releasing a rented car.
+    /// Updates a car in one form. Leave "image" empty to keep the current photo, pick a
+    /// file to replace it, or set "removeImage" to true to delete it. Leave "status"
+    /// out to keep the current status.
     /// </summary>
     [HttpPut("{id:int}")]
-    [Authorize]
-    [ProducesResponseType(typeof(CarDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CarDto>> Update(int id, CarUpdateDto dto)
-    {
-        if (!dto.HasValidStatus())
-            return Problem(
-                detail: $"Unknown status '{dto.Status}'. Allowed values: {string.Join(", ", CarStatus.All)}.",
-                statusCode: StatusCodes.Status400BadRequest,
-                title: "Invalid status");
-
-        // Remember the current photo so a change or explicit clear does not leave the
-        // old file orphaned on disk.
-        var previousImage = (await repo.GetByIdAsync(id))?.ImageUrl;
-
-        var updated = await repo.UpdateAsync(id, dto.Model, dto.Brand, dto.PricePerDay, dto.ImageUrl, dto.Status);
-        if (updated is null)
-            return Problem(
-                detail: $"Car {id} was not found.",
-                statusCode: StatusCodes.Status404NotFound,
-                title: "Not found");
-
-        if (previousImage is not null &&
-            !string.Equals(previousImage, updated.ImageUrl, StringComparison.OrdinalIgnoreCase))
-            images.TryDelete(previousImage);
-
-        return Ok(updated.ToDto());
-    }
-
-    /// <summary>
-    /// Uploads a photo for a car from your computer and stores it under wwwroot/uploads,
-    /// then points the car's ImageUrl at it. Replacing a photo deletes the previous file.
-    /// </summary>
-    /// <remarks>
-    /// Accepts jpg, jpeg, png, gif and webp up to 5 MB. The file's real format is verified
-    /// from its header, so renaming another file type to .jpg will be rejected.
-    /// </remarks>
-    [HttpPost("{id:int}/image")]
     [Authorize]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(CarDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CarDto>> UploadImage(int id, IFormFile file, CancellationToken ct)
+    public async Task<ActionResult<CarDto>> Update(int id, [FromForm] CarUpdateForm form, CancellationToken ct)
     {
-        var car = await repo.GetByIdAsync(id);
-        if (car is null)
+        if (form.Status is not null && !CarStatus.IsValid(form.Status))
+            return Problem(
+                detail: $"Unknown status '{form.Status}'. Allowed values: {string.Join(", ", CarStatus.All)}.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid status");
+
+        // 404 before touching the disk — a photo must never be stored for a car
+        // that does not exist.
+        var existing = await repo.GetByIdAsync(id);
+        if (existing is null)
             return Problem(
                 detail: $"Car {id} was not found.",
                 statusCode: StatusCodes.Status404NotFound,
                 title: "Not found");
 
-        if (file is null || file.Length == 0)
-            return Problem(
-                detail: "No file was received. Choose an image file in the 'file' field and try again.",
-                statusCode: StatusCodes.Status400BadRequest,
-                title: "No file uploaded");
+        // null = keep the current photo; "" = clear it; a path = the new photo.
+        string? imageUrlChange = null;
 
-        await using var stream = file.OpenReadStream();
-        var outcome = await images.SaveAsync(stream, file.FileName, file.Length, ct);
+        if (form.Image is { Length: > 0 })
+        {
+            await using var stream = form.Image.OpenReadStream();
+            var outcome = await images.SaveAsync(stream, form.Image.FileName, form.Image.Length, ct);
 
-        if (!outcome.Success)
-            return Problem(
-                detail: outcome.Error,
-                statusCode: StatusCodes.Status400BadRequest,
-                title: "Image rejected");
+            if (!outcome.Success)
+                return Problem(
+                    detail: outcome.Error,
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Image rejected");
 
-        var previousImage = car.ImageUrl;
+            imageUrlChange = outcome.RelativeUrl;
+        }
+        else if (form.RemoveImage)
+        {
+            imageUrlChange = string.Empty;
+        }
 
-        var updated = await repo.SetImageUrlAsync(id, outcome.RelativeUrl);
+        var updated = await repo.UpdateAsync(
+            id, form.Model, form.Brand, form.PricePerDay, imageUrlChange, form.Status);
+
         if (updated is null)
         {
-            // The car disappeared between the two calls — don't leave the file orphaned.
-            images.TryDelete(outcome.RelativeUrl);
+            // The car vanished between the existence check and the update.
+            images.TryDelete(imageUrlChange);
             return Problem(
                 detail: $"Car {id} was not found.",
                 statusCode: StatusCodes.Status404NotFound,
                 title: "Not found");
         }
 
-        // Only remove the old file once the new URL is safely persisted.
-        if (!string.Equals(previousImage, outcome.RelativeUrl, StringComparison.OrdinalIgnoreCase))
-            images.TryDelete(previousImage);
+        // The photo changed or was removed — delete the file that is no longer referenced.
+        if (imageUrlChange is not null &&
+            existing.ImageUrl is not null &&
+            !string.Equals(existing.ImageUrl, updated.ImageUrl, StringComparison.OrdinalIgnoreCase))
+            images.TryDelete(existing.ImageUrl);
 
         return Ok(updated.ToDto());
-    }
-
-    /// <summary>Removes a car's photo and deletes the stored file.</summary>
-    [HttpDelete("{id:int}/image")]
-    [Authorize]
-    [ProducesResponseType(typeof(CarDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CarDto>> DeleteImage(int id)
-    {
-        var car = await repo.GetByIdAsync(id);
-        if (car is null)
-            return Problem(
-                detail: $"Car {id} was not found.",
-                statusCode: StatusCodes.Status404NotFound,
-                title: "Not found");
-
-        if (car.ImageUrl is null)
-            return Ok(car.ToDto());   // already has no photo — nothing to do
-
-        var updated = await repo.SetImageUrlAsync(id, null);
-        images.TryDelete(car.ImageUrl);
-
-        return Ok((updated ?? car).ToDto());
     }
 
     [HttpDelete("{id:int}")]

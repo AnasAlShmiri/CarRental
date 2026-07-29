@@ -60,16 +60,6 @@ public class CarRepository(ApplicationDbContext db) : ICarRepository
         return existing;
     }
 
-    public async Task<Car?> SetImageUrlAsync(int id, string? imageUrl)
-    {
-        var existing = await db.Cars.FirstOrDefaultAsync(c => c.Id == id);
-        if (existing is null) return null;
-
-        existing.ImageUrl = imageUrl;
-        await db.SaveChangesAsync();
-        return existing;
-    }
-
     public async Task<bool> DeleteAsync(int id)
     {
         var car = await db.Cars.FirstOrDefaultAsync(c => c.Id == id);

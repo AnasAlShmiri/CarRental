@@ -18,57 +18,132 @@ GET {{host}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### ─────────────────────────────── CARS ───────────────────────────────
+### Cars use multipart/form-data so the photo travels in the SAME request.
+### Tip: Swagger is the easiest way to pick a file — it shows a Choose-file button.
 
 ### List all cars (public)
-GET {{host}}/api/cars
+GET {{host}}/api/Cars
 
 ### Only cars available to rent (used by the mobile app)
-GET {{host}}/api/cars/available
+GET {{host}}/api/Cars/available
 
 ### Filter by status: Available | Rented | UnderMaintenance
-GET {{host}}/api/cars?status=Available
+GET {{host}}/api/Cars?status=Available
 
 ### Get one car
-GET {{host}}/api/cars/1
+GET {{host}}/api/Cars/1
 
-### Create a car (admin)
-POST {{host}}/api/cars
-Content-Type: application/json
+### Create a car WITHOUT a photo
+POST {{host}}/api/Cars
 Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=CarForm
 
-{
-  "model": "Camry 2024",
-  "brand": "Toyota",
-  "pricePerDay": 150.00,
-  "imageUrl": "/uploads/camry.jpg"
-}
+--CarForm
+Content-Disposition: form-data; name="model"
 
-### Update a car — omit "status" to KEEP the current one
-PUT {{host}}/api/cars/1
-Content-Type: application/json
+Camry 2024
+--CarForm
+Content-Disposition: form-data; name="brand"
+
+Toyota
+--CarForm
+Content-Disposition: form-data; name="pricePerDay"
+
+150.00
+--CarForm--
+
+### Create a car WITH a photo in the same request
+### (put the image file next to this .http file, or adjust the path)
+POST {{host}}/api/Cars
 Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=CarForm
 
-{
-  "model": "Camry 2024",
-  "brand": "Toyota",
-  "pricePerDay": 175.00,
-  "imageUrl": "/uploads/camry.jpg"
-}
+--CarForm
+Content-Disposition: form-data; name="model"
+
+Sonata 2025
+--CarForm
+Content-Disposition: form-data; name="brand"
+
+Hyundai
+--CarForm
+Content-Disposition: form-data; name="pricePerDay"
+
+120.00
+--CarForm
+Content-Disposition: form-data; name="image"; filename="car.jpg"
+Content-Type: image/jpeg
+
+< ./car.jpg
+--CarForm--
+
+### Update a car — leave "image" out to KEEP the photo, "status" out to KEEP the status
+PUT {{host}}/api/Cars/1
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=CarForm
+
+--CarForm
+Content-Disposition: form-data; name="model"
+
+Camry 2024
+--CarForm
+Content-Disposition: form-data; name="brand"
+
+Toyota
+--CarForm
+Content-Disposition: form-data; name="pricePerDay"
+
+175.00
+--CarForm--
+
+### Remove a car's photo (removeImage=true)
+PUT {{host}}/api/Cars/1
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=CarForm
+
+--CarForm
+Content-Disposition: form-data; name="model"
+
+Camry 2024
+--CarForm
+Content-Disposition: form-data; name="brand"
+
+Toyota
+--CarForm
+Content-Disposition: form-data; name="pricePerDay"
+
+175.00
+--CarForm
+Content-Disposition: form-data; name="removeImage"
+
+true
+--CarForm--
 
 ### Take a car out of circulation
-PUT {{host}}/api/cars/1
-Content-Type: application/json
+PUT {{host}}/api/Cars/1
 Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=CarForm
 
-{
-  "model": "Camry 2024",
-  "brand": "Toyota",
-  "pricePerDay": 175.00,
-  "status": "UnderMaintenance"
-}
+--CarForm
+Content-Disposition: form-data; name="model"
 
-### Delete a car (409 if it has any rental history)
-DELETE {{host}}/api/cars/1
+Camry 2024
+--CarForm
+Content-Disposition: form-data; name="brand"
+
+Toyota
+--CarForm
+Content-Disposition: form-data; name="pricePerDay"
+
+175.00
+--CarForm
+Content-Disposition: form-data; name="status"
+
+UnderMaintenance
+--CarForm--
+
+### Delete a car (409 if it has any rental history; its photo file is removed too)
+DELETE {{host}}/api/Cars/1
 Authorization: Bearer {{token}}
 
 ### ───────────────────────────── CUSTOMERS ────────────────────────────
