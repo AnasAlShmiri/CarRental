@@ -18,8 +18,9 @@ public class Rental
     [Range(0, double.MaxValue)]
     public decimal TotalPrice { get; set; }
 
+    /// <summary>One of <see cref="RentalStatus"/>.</summary>
     [MaxLength(20)]
-    public string Status { get; set; } = "Active"; // Active | Completed | Cancelled
+    public string Status { get; set; } = RentalStatus.Active;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

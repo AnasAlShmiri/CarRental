@@ -19,7 +19,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(c => c.Model).IsRequired().HasMaxLength(100);
             entity.Property(c => c.Brand).IsRequired().HasMaxLength(50);
             entity.Property(c => c.PricePerDay).HasColumnType("decimal(18,2)");
-            entity.Property(c => c.Status).HasMaxLength(20).HasDefaultValue("Available");
+            entity.Property(c => c.ImageUrl).HasMaxLength(500);
+            entity.Property(c => c.Status).HasMaxLength(20).HasDefaultValue(CarStatus.Available);
+
+            // The mobile app's main query is "cars where status = Available".
+            entity.HasIndex(c => c.Status);
         });
 
         modelBuilder.Entity<Customer>(entity =>
@@ -35,7 +39,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(r => r.Id);
             entity.Property(r => r.TotalPrice).HasColumnType("decimal(18,2)");
-            entity.Property(r => r.Status).HasMaxLength(20).HasDefaultValue("Active");
+            entity.Property(r => r.Status).HasMaxLength(20).HasDefaultValue(RentalStatus.Active);
+
+            // Overlap checks filter on (CarId, Status) then compare dates.
+            entity.HasIndex(r => new { r.CarId, r.Status });
+            entity.HasIndex(r => r.CustomerId);
 
             entity.HasOne(r => r.Car)
                   .WithMany(c => c.Rentals)

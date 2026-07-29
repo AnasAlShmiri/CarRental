@@ -1,6 +1,156 @@
-@CarRental.API_HostAddress = http://localhost:5109
+@host = http://localhost:5109
 
-GET {{CarRental.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Log in to get a JWT (copy the token into @token below)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@12345"
+}
 
 ###
+@token = PASTE_TOKEN_HERE
+
+### 2. Verify the token
+GET {{host}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### ─────────────────────────────── CARS ───────────────────────────────
+
+### List all cars (public)
+GET {{host}}/api/cars
+
+### Only cars available to rent (used by the mobile app)
+GET {{host}}/api/cars/available
+
+### Filter by status: Available | Rented | UnderMaintenance
+GET {{host}}/api/cars?status=Available
+
+### Get one car
+GET {{host}}/api/cars/1
+
+### Create a car (admin)
+POST {{host}}/api/cars
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "model": "Camry 2024",
+  "brand": "Toyota",
+  "pricePerDay": 150.00,
+  "imageUrl": "/uploads/camry.jpg"
+}
+
+### Update a car — omit "status" to KEEP the current one
+PUT {{host}}/api/cars/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "model": "Camry 2024",
+  "brand": "Toyota",
+  "pricePerDay": 175.00,
+  "imageUrl": "/uploads/camry.jpg"
+}
+
+### Take a car out of circulation
+PUT {{host}}/api/cars/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "model": "Camry 2024",
+  "brand": "Toyota",
+  "pricePerDay": 175.00,
+  "status": "UnderMaintenance"
+}
+
+### Delete a car (409 if it has any rental history)
+DELETE {{host}}/api/cars/1
+Authorization: Bearer {{token}}
+
+### ───────────────────────────── CUSTOMERS ────────────────────────────
+
+### List customers (admin only)
+GET {{host}}/api/customers
+Authorization: Bearer {{token}}
+
+### Create a customer
+POST {{host}}/api/customers
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Anas Sadeq",
+  "email": "anas@example.com",
+  "phone": "0500000000"
+}
+
+### Update a customer
+PUT {{host}}/api/customers/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Anas S.",
+  "email": "anas@example.com",
+  "phone": "0500000001"
+}
+
+### Delete a customer (409 if they have rentals)
+DELETE {{host}}/api/customers/1
+Authorization: Bearer {{token}}
+
+### ────────────────────────────── RENTALS ─────────────────────────────
+
+### Book a car. TotalPrice is calculated by the server.
+POST {{host}}/api/rentals
+Content-Type: application/json
+
+{
+  "carId": 1,
+  "customerId": 1,
+  "startDate": "2026-08-01",
+  "endDate": "2026-08-08"
+}
+
+### List all rentals (admin)
+GET {{host}}/api/rentals
+Authorization: Bearer {{token}}
+
+### One customer's rental history
+GET {{host}}/api/rentals/customer/1
+Authorization: Bearer {{token}}
+
+### Get one rental
+GET {{host}}/api/rentals/1
+Authorization: Bearer {{token}}
+
+### Change the rental period (TotalPrice is recalculated; status preserved)
+PUT {{host}}/api/rentals/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "startDate": "2026-08-01",
+  "endDate": "2026-08-10"
+}
+
+### Complete the rental — releases the car back to Available
+PUT {{host}}/api/rentals/1/complete
+Authorization: Bearer {{token}}
+
+### Cancel the rental — also releases the car
+PUT {{host}}/api/rentals/1/cancel
+Authorization: Bearer {{token}}
+
+### Delete a rental (frees its car if it was active)
+DELETE {{host}}/api/rentals/1
+Authorization: Bearer {{token}}
+
+### ─────────────────────────────── OTHER ──────────────────────────────
+
+### Health probe
+GET {{host}}/health
