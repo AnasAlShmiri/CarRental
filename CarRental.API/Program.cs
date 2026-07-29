@@ -5,6 +5,7 @@ using CarRental.Infrastructure.Auth;
 using CarRental.Infrastructure.Data;
 using CarRental.Infrastructure.Repositories;
 using CarRental.Infrastructure.Services;
+using CarRental.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -42,6 +43,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IRentalRepository, RentalRepository>();
+
+// ── Car image storage ─────────────────────────────────────────────────────────
+// Files land in wwwroot/uploads and are served by UseStaticFiles() further down.
+builder.Services.Configure<ImageStorageOptions>(
+    builder.Configuration.GetSection(ImageStorageOptions.SectionName));
+builder.Services.PostConfigure<ImageStorageOptions>(o =>
+{
+    // Only the host knows its web root, so it is supplied here rather than in config.
+    if (string.IsNullOrWhiteSpace(o.PhysicalRootPath))
+        o.PhysicalRootPath = builder.Environment.WebRootPath
+                             ?? Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+});
+builder.Services.AddScoped<ICarImageStorage, LocalCarImageStorage>();
 
 // ── Authentication / Authorization ────────────────────────────────────────────
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
@@ -152,8 +166,21 @@ builder.Services.AddSwaggerGen(options =>
             * `totalPrice` is always calculated by the server. Never send it.
             * On `PUT /api/Cars/{id}`, leave `status` out of the body to keep the car's
               current status. Sending it is the only way to change it.
-            * `imageUrl` expects a web path such as `/uploads/car1.jpg`, not a local
-              Windows path. Put the file in `wwwroot/uploads/` first.
+            ### 5. Car photos
+
+            To upload a picture from your computer, use `POST /api/Cars/{id}/image`.
+            Create the car first, then call that endpoint and pick the file — Swagger
+            shows a **Choose file** button for it. The server stores the file under
+            `wwwroot/uploads/` and fills in the car's `imageUrl` automatically.
+
+            * Accepted: jpg, jpeg, png, gif, webp — up to 5 MB.
+            * The real format is verified from the file's header, so renaming a
+              document to `.jpg` is rejected.
+            * Uploading again replaces the old picture and deletes the old file.
+            * `DELETE /api/Cars/{id}/image` removes the photo.
+            * Do **not** put a local path such as `C:\Users\...\photo.png` in
+              `imageUrl` — browsers and the mobile app cannot read your disk. The field
+              holds a web path such as `/uploads/car1.jpg`, which the upload sets for you.
             * Every error response is a ProblemDetails object whose `detail` field
               explains what went wrong and how to fix it.
             """
@@ -225,7 +252,13 @@ app.UseProblemDetailsForEmptyResponses();
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
-// Serves car images from wwwroot/uploads.
+// Serves car images from wwwroot/uploads. Create the folder if it is missing —
+// git does not track empty directories, so a fresh clone may not have it, and
+// UseStaticFiles logs a warning when the web root does not exist.
+var webRoot = app.Environment.WebRootPath
+              ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(Path.Combine(webRoot, "uploads"));
+
 app.UseStaticFiles();
 
 app.UseCors(CorsPolicy);

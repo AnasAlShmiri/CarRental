@@ -42,7 +42,6 @@ public class CarRepository(ApplicationDbContext db) : ICarRepository
         existing.Model = model;
         existing.Brand = brand;
         existing.PricePerDay = pricePerDay;
-        existing.ImageUrl = imageUrl;
 
         // BUGFIX: only touch Status when the caller explicitly supplied one.
         // The previous version always assigned it, so the create-DTO's default
@@ -50,7 +49,23 @@ public class CarRepository(ApplicationDbContext db) : ICarRepository
         if (newStatus is not null)
             existing.Status = newStatus;
 
+        // Same rule for the photo: null means "leave it alone", so editing a price
+        // through the dashboard cannot silently wipe an uploaded image. An empty
+        // string is an explicit "remove the photo".
+        if (imageUrl is not null)
+            existing.ImageUrl = imageUrl.Length == 0 ? null : imageUrl;
+
         // CreatedAt is never reassigned — it stays as originally recorded.
+        await db.SaveChangesAsync();
+        return existing;
+    }
+
+    public async Task<Car?> SetImageUrlAsync(int id, string? imageUrl)
+    {
+        var existing = await db.Cars.FirstOrDefaultAsync(c => c.Id == id);
+        if (existing is null) return null;
+
+        existing.ImageUrl = imageUrl;
         await db.SaveChangesAsync();
         return existing;
     }

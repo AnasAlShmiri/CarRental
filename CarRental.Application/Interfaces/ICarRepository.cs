@@ -16,10 +16,24 @@ public interface ICarRepository
     Task<Car> CreateAsync(Car car);
 
     /// <summary>
-    /// Updates the editable fields. When <paramref name="newStatus"/> is null the car's
-    /// current status is preserved — this is the fix for a price edit releasing a rented car.
+    /// Updates the editable fields.
+    /// <para>
+    /// <paramref name="newStatus"/> null preserves the current status — this is the fix for a
+    /// price edit releasing a rented car.
+    /// </para>
+    /// <para>
+    /// <paramref name="imageUrl"/> follows the same rule: null preserves the existing image,
+    /// so editing a price does not silently discard an uploaded photo. Pass an empty string
+    /// to deliberately clear it.
+    /// </para>
     /// </summary>
     Task<Car?> UpdateAsync(int id, string model, string brand, decimal pricePerDay, string? imageUrl, string? newStatus);
+
+    /// <summary>
+    /// Sets (or clears, when null) just the car's image URL. Returns the updated car,
+    /// or null when no car has that id.
+    /// </summary>
+    Task<Car?> SetImageUrlAsync(int id, string? imageUrl);
 
     Task<bool> DeleteAsync(int id);
 

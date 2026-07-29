@@ -2,6 +2,19 @@
 # CarRental API — end-to-end endpoint test suite.
 # Each check hits the real running API over HTTP and asserts the status code
 # (and, where it matters, the response body).
+#
+# IMPORTANT: run this against a FRESH, EMPTY database. The suite creates customers
+# with fixed email addresses, and Email has a unique index, so a second run against
+# the same data returns 409 on those inserts and every later check that depends on
+# the created ids fails in a cascade.
+#
+#   rm -f /tmp/carrental_test.db          # start clean
+#   DatabaseProvider=Sqlite \
+#   ConnectionStrings__DefaultConnection="Data Source=/tmp/carrental_test.db" \
+#   ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS="http://127.0.0.1:5109" \
+#   dotnet run --project CarRental.API    # window 1
+#
+#   UPLOADS_DIR=CarRental.API/wwwroot/uploads ./tests/test_api.sh   # window 2
 
 BASE="http://127.0.0.1:5109"
 PASS=0; FAIL=0
@@ -16,7 +29,7 @@ req() {
   [ -n "$token" ] && args+=(-H "Authorization: Bearer $token")
   [ -n "$body" ] && args+=(-d "$body")
   STATUS=$(curl "${args[@]}")
-  BODY=$(cat /tmp/_body)
+  BODY=$(tr -d '\000' < /tmp/_body 2>/dev/null | head -c 2000)
 }
 
 # check LABEL EXPECTED_STATUS
@@ -286,6 +299,82 @@ check "Rentals for missing customer -> 404" 404
 req GET "/api/rentals/$RENT3" "" "$TOKEN";   check "Get rental by id -> 200" 200
 assert_json "Rental embeds car summary"      "['car']['brand']" "Hyundai"
 assert_json "Rental embeds customer summary" "['customer']['name']" "Anas S."
+
+# ---- 12. car image upload ---------------------------------------------------
+section "12. Car photo upload"
+UPDIR="${UPLOADS_DIR:-CarRental.API/wwwroot/uploads}"
+imgcount() { ls "$UPDIR" 2>/dev/null | grep -cE '\.(png|jpg|jpeg|gif|webp)$'; }
+
+# build fixtures: a real png, a real jpg, text renamed .png, png renamed .jpg, oversized
+python3 - <<'PYFIX'
+import zlib, struct
+def png(path, w=8, h=8):
+    def ch(t,d):
+        c=t+d
+        return struct.pack(">I",len(d))+c+struct.pack(">I",zlib.crc32(c)&0xffffffff)
+    raw=b"".join(b"\x00"+bytes((30,90,200))*w for _ in range(h))
+    open(path,"wb").write(b"\x89PNG\r\n\x1a\n"
+        + ch(b"IHDR",struct.pack(">IIBBBBB",w,h,8,2,0,0,0))
+        + ch(b"IDAT",zlib.compress(raw)) + ch(b"IEND",b""))
+png("/tmp/t_car.png")
+open("/tmp/t_car.jpg","wb").write(bytes.fromhex("FFD8FF")+b"\xE0\x00\x10JFIF\x00"+b"\x00"*40+b"\xFF\xD9")
+open("/tmp/t_fake.png","wb").write(b"not an image at all, just text")
+png("/tmp/t_mismatch.jpg")
+open("/tmp/t_huge.png","wb").write(open("/tmp/t_car.png","rb").read()+b"\x00"*(6*1024*1024))
+PYFIX
+
+upload() {  # upload FILE CAR_ID -> sets STATUS/BODY
+  STATUS=$(curl -sS -o /tmp/_body -w '%{http_code}' --max-time 30 \
+    -X POST "$BASE/api/cars/$2/image" -H "Authorization: Bearer $TOKEN" -F "file=@$1")
+  BODY=$(tr -d '\000' < /tmp/_body 2>/dev/null | head -c 2000)
+}
+
+req POST /api/cars '{"model":"Photo Test","brand":"Test","pricePerDay":100}' "$TOKEN"
+check "Create car for photo tests -> 201" 201
+PCAR=$(jqv "['id']")
+
+upload /tmp/t_car.png "$PCAR";        check "Upload a valid PNG -> 200" 200
+IMG1=$(jqv "['imageUrl']")
+case "$IMG1" in /uploads/*.png) PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  imageUrl points into /uploads ($IMG1)";;
+  *) FAIL=$((FAIL+1)); FAILURES+=("bad imageUrl: $IMG1"); echo -e "  \033[31mFAIL\033[0m  imageUrl = $IMG1";; esac
+
+req GET "$IMG1";                      check "Uploaded file is served over HTTP -> 200" 200
+
+upload /tmp/t_fake.png "$PCAR";       check "Text file renamed .png -> 400 (magic-byte check)" 400
+upload /tmp/t_mismatch.jpg "$PCAR";   check "PNG renamed .jpg -> 400 (format mismatch)" 400
+upload /tmp/t_huge.png "$PCAR";       check "6 MB file -> 400 (size limit)" 400
+upload /tmp/t_car.png 999999;         check "Upload to a missing car -> 404" 404
+
+# replacing must delete the previous file
+upload /tmp/t_car.jpg "$PCAR";        check "Replace the photo -> 200" 200
+IMG2=$(jqv "['imageUrl']")
+req GET "$IMG1";                      check "Old file is gone after replace -> 404" 404
+
+# the bug: a price edit must NOT wipe the uploaded photo
+req PUT "/api/cars/$PCAR" '{"model":"Photo Test","brand":"Test","pricePerDay":250}' "$TOKEN"
+check "Edit price without imageUrl -> 200" 200
+assert_json "BUGFIX: photo survives a price edit" "['imageUrl']" "$IMG2"
+
+# explicit clear
+req PUT "/api/cars/$PCAR" '{"model":"Photo Test","brand":"Test","pricePerDay":250,"imageUrl":""}' "$TOKEN"
+check "Clear photo with empty string -> 200" 200
+assert_json "imageUrl is null after explicit clear" "['imageUrl']" "None"
+
+# DELETE /image
+upload /tmp/t_car.png "$PCAR" >/dev/null
+req DELETE "/api/cars/$PCAR/image" "" "$TOKEN"
+check "DELETE /image -> 200" 200
+assert_json "imageUrl is null after DELETE /image" "['imageUrl']" "None"
+
+# a real multipart upload with no Authorization header (json content-type would be a 415)
+STATUS=$(curl -sS -o /tmp/_body -w '%{http_code}' --max-time 30 \
+  -X POST "$BASE/api/cars/$PCAR/image" -F "file=@/tmp/t_car.png"); BODY=$(cat /tmp/_body)
+check "Upload without a token -> 401" 401
+
+# deleting the car cleans up its file
+upload /tmp/t_car.png "$PCAR" >/dev/null
+req DELETE "/api/cars/$PCAR" "" "$TOKEN"
+check "Delete the car -> 204" 204
 
 # ---- summary ---------------------------------------------------------------
 printf '\n\033[1m══════════════════════════════════════════════════\033[0m\n'

@@ -70,7 +70,9 @@ public static class EmptyResponseProblemDetails
 
         StatusCodes.Status415UnsupportedMediaType => (
             "Unsupported request format",
-            "Send the request body as application/json and set the Content-Type header to match."),
+            "The Content-Type header does not match what this endpoint accepts. Most endpoints "
+          + "take application/json; the image-upload endpoints take multipart/form-data. "
+          + "Check the endpoint in /swagger for the exact media type."),
 
         StatusCodes.Status429TooManyRequests => (
             "Too many requests",

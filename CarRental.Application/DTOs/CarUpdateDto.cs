@@ -23,6 +23,11 @@ public class CarUpdateDto
     [Range(0.01, 1_000_000, ErrorMessage = "PricePerDay must be greater than 0.")]
     public decimal PricePerDay { get; set; }
 
+    /// <summary>
+    /// Optional. When null (omitted) the existing photo is kept — otherwise editing a
+    /// price would silently discard an uploaded image. Pass "" to remove the photo.
+    /// To upload an actual file, use POST /api/cars/{id}/image instead.
+    /// </summary>
     [MaxLength(500)]
     public string? ImageUrl { get; set; }
 
