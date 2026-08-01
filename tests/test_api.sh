@@ -135,6 +135,9 @@ section "0. Infrastructure"
 req GET /health;                             check "GET /health" 200
 req GET /swagger/v1/swagger.json;            check "Swagger JSON generated" 200
 assert_json "Swagger declares Bearer scheme" "['components']['securitySchemes']['Bearer']['scheme']" "bearer"
+# BUGFIX guard: the requirement used to serialise as an empty object ("security":[{}]),
+# so Swagger UI never sent the Authorization header even after a correct Authorize.
+assert_json "Swagger applies the Bearer requirement" "['security'][0]['Bearer']" "[]"
 
 # ---- 1. authentication -------------------------------------------------------
 section "1. Authentication (JWT)"

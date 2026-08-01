@@ -216,9 +216,15 @@ builder.Services.AddSwaggerGen(options =>
 
     // Swashbuckle 10 takes a factory, and Microsoft.OpenApi v2 keys security
     // requirements by scheme *reference* rather than by an inline scheme object.
-    options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+    //
+    // BUGFIX: the reference MUST be given the host document (the factory's parameter).
+    // Without it the requirement serialised as an empty object — "security": [{}] —
+    // so Swagger UI never attached the Authorization header: pasting a perfectly
+    // valid token into Authorize still produced 401 on every protected endpoint.
+    // With the document supplied it serialises correctly as {"Bearer": []}.
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
-        [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
 
