@@ -163,8 +163,19 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
             imageUrlChange = string.Empty;
         }
 
-        var updated = await repo.UpdateAsync(
-            id, form.Model, form.Brand, form.PricePerDay, imageUrlChange, form.Status);
+        Car? updated;
+        try
+        {
+            updated = await repo.UpdateAsync(
+                id, form.Model, form.Brand, form.PricePerDay, imageUrlChange, form.Status);
+        }
+        catch
+        {
+            // BUGFIX: a database failure here used to leave the freshly stored photo
+            // orphaned on disk (Create already cleaned up after itself; Update did not).
+            images.TryDelete(imageUrlChange);
+            throw;
+        }
 
         if (updated is null)
         {

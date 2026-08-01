@@ -16,9 +16,14 @@ public class CustomerRepository(ApplicationDbContext db) : ICustomerRepository
     public async Task<bool> ExistsAsync(int id) =>
         await db.Customers.AnyAsync(c => c.Id == id);
 
+    // BUGFIX: the comparison was culture/provider dependent — SQL Server's default
+    // collation is case-insensitive but SQLite's is case-sensitive, so
+    // "ANAS@example.com" slipped past this check on SQLite and created a duplicate.
+    // Normalising both sides makes every provider behave the same way.
     public async Task<bool> EmailExistsAsync(string email, int? excludeCustomerId = null) =>
         await db.Customers.AnyAsync(c =>
-            c.Email == email && (excludeCustomerId == null || c.Id != excludeCustomerId));
+            c.Email.ToLower() == email.ToLower() &&
+            (excludeCustomerId == null || c.Id != excludeCustomerId));
 
     public async Task<Customer> CreateAsync(Customer customer)
     {

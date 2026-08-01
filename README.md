@@ -8,7 +8,7 @@
 | قاعدة البيانات | SQL Server + Entity Framework Core 10 |
 | التوثيق | Swagger / OpenAPI (Swashbuckle) |
 | المصادقة | JWT Bearer |
-| ملف الحل | `CarRental.slnx` (الصيغة الجديدة — تحتاج .NET SDK 9.0.200 أو أحدث) |
+| ملف الحل | `CarRental.slnx` — بما أن المشروع يستهدف net10.0 فهو يتطلب **.NET SDK 10** (صيغة slnx نفسها مدعومة من SDK 9.0.200 فما فوق) |
 
 ---
 

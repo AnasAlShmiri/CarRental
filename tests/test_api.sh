@@ -135,6 +135,9 @@ section "0. Infrastructure"
 req GET /health;                             check "GET /health" 200
 req GET /swagger/v1/swagger.json;            check "Swagger JSON generated" 200
 assert_json "Swagger declares Bearer scheme" "['components']['securitySchemes']['Bearer']['scheme']" "bearer"
+# BUGFIX guard: the requirement used to serialise as an empty object ("security":[{}]),
+# so Swagger UI never sent the Authorization header even after a correct Authorize.
+assert_json "Swagger applies the Bearer requirement" "['security'][0]['Bearer']" "[]"
 
 # ---- 1. authentication -------------------------------------------------------
 section "1. Authentication (JWT)"
@@ -182,6 +185,10 @@ reqform POST /api/cars "$TOKEN" model=Rio brand=Kia pricePerDay=0
 check "Create car with price 0 -> 400" 400
 reqform POST /api/cars "$TOKEN" model=Rio brand=Kia pricePerDay=-5
 check "Create car with negative price -> 400" 400
+# BUGFIX: the invariant-culture binder used to read "10,5" as 105 (comma = thousands
+# separator), silently storing a 10x price. Group separators are now rejected.
+reqform POST /api/cars "$TOKEN" model=Rio brand=Kia pricePerDay=10,5
+check "BUGFIX comma decimal '10,5' -> 400 (was stored as 105)" 400
 
 req GET "/api/cars/$CAR1";                   check "Get car by id -> 200" 200
 req GET /api/cars/999999;                    check "Get missing car -> 404" 404
@@ -197,6 +204,10 @@ check "Create customer -> 201" 201
 CUST1=$(jqv "['id']")
 req POST /api/customers '{"name":"Someone Else","email":"anas@example.com","phone":"0511111111"}' "$TOKEN"
 check "BUG#9 duplicate email -> 409 (was 500)" 409
+# BUGFIX: the duplicate check was case-sensitive on SQLite (though not on SQL Server),
+# so the same address with different casing created a duplicate customer.
+req POST /api/customers '{"name":"Case Variant","email":"ANAS@Example.COM","phone":"0533333333"}' "$TOKEN"
+check "BUGFIX duplicate email different case -> 409" 409
 req POST /api/customers '{"name":"Bad Email","email":"not-an-email","phone":"05"}' "$TOKEN"
 check "Create customer with invalid email -> 400" 400
 req POST /api/customers '{"name":"Second","email":"second@example.com","phone":"0522222222"}' "$TOKEN"
