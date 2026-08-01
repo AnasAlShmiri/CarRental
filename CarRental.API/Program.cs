@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using CarRental.API.Binding;
 using CarRental.API.Errors;
 using CarRental.Application.Interfaces;
 using CarRental.Infrastructure.Auth;
@@ -117,7 +118,12 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // ── Controllers + JSON options ────────────────────────────────────────────────
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+        // BUGFIX: the default binder read a form value of "10,5" as 105 — in the
+        // invariant culture the comma is a THOUSANDS separator — silently storing a
+        // 10x price. This binder accepts only "150" / "150.50" and rejects group
+        // separators with a clear message. JSON bodies are unaffected.
+        options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider()))
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.ReferenceHandler =
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);

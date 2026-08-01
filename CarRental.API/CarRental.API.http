@@ -225,6 +225,13 @@ Authorization: Bearer {{token}}
 DELETE {{host}}/api/rentals/1
 Authorization: Bearer {{token}}
 
+### ─────────────────────────── STATISTICS ─────────────────────────────
+
+### Dashboard statistics — fleet, customers, rentals, revenue + monthly chart series
+### "months" controls how many recent months the revenue series covers (1–24, default 6)
+GET {{host}}/api/statistics?months=6
+Authorization: Bearer {{token}}
+
 ### ─────────────────────────────── OTHER ──────────────────────────────
 
 ### Health probe
