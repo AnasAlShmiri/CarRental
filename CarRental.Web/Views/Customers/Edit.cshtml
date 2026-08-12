@@ -1,0 +1,42 @@
+@model CustomerViewModel
+@{
+    ViewData["Title"] = $"تعديل العميل — {Model.Name}";
+}
+
+<div class="card" style="max-width: 640px;">
+    <div class="card-header">تعديل بيانات العميل</div>
+    <div class="card-body">
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" type="email" dir="ltr" style="text-align:end" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label"></label>
+                <input asp-for="Phone" class="form-control" dir="ltr" style="text-align:end" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                <a asp-action="Index" class="btn btn-soft">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+}

@@ -1,0 +1,23 @@
+@model CarRental.Domain.Models.Customer
+@{
+    ViewData["Title"] = $"حذف العميل — {Model.Name}";
+}
+
+<div class="card" style="max-width: 560px;">
+    <div class="card-header text-danger">تأكيد الحذف</div>
+    <div class="card-body">
+        <h5 class="mb-1">@Model.Name</h5>
+        <div class="text-muted mb-3" dir="ltr" style="text-align:end">@Model.Email</div>
+
+        <p class="text-danger fw-semibold">
+            هل أنت متأكد من حذف هذا العميل؟ إذا كان له سجل إيجارات فلن يتم الحذف حمايةً
+            للتكامل المرجعي مع الحسابات المالية.
+        </p>
+
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-flex gap-2">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">نعم، احذف</button>
+            <a asp-action="Index" class="btn btn-soft">إلغاء</a>
+        </form>
+    </div>
+</div>

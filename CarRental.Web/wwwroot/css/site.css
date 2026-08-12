@@ -1,0 +1,330 @@
+/* ── CarRental.Web — Arabic RTL admin theme ────────────────────────────── */
+
+:root {
+    --brand-900: #0d1b2a;
+    --brand-800: #14283f;
+    --brand-700: #1d3a5f;
+    --accent: #3e84c8;
+    --accent-soft: #eaf2fb;
+    --gold: #d4a72c;
+    --text: #1e293b;
+    --muted: #64748b;
+    --surface: #f6f8fb;
+    --card: #ffffff;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(13, 27, 42, .06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: "Segoe UI", "Tahoma", "Noto Kufi Arabic", sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    margin: 0;
+}
+
+/* ── Layout shell: fixed rail sidebar + fluid main ──────────────────────── */
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, var(--brand-900), var(--brand-800));
+    color: #cbd9e7;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: -3px 0 20px rgba(0, 0, 0, .15);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: 1.4rem 1.25rem 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.brand-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-name { display: block; color: #fff; font-weight: 700; font-size: 1.05rem; }
+.brand-sub  { display: block; font-size: .75rem; opacity: .65; margin-top: 2px; }
+
+.sidebar-nav { flex: 1; padding: 1rem 0; display: flex; flex-direction: column; gap: .35rem; }
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .8rem 1.25rem;
+    color: #c4d2e2;
+    text-decoration: none;
+    font-size: .95rem;
+    border-right: 3px solid transparent;
+    transition: all .15s ease;
+}
+
+.nav-item:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+
+.nav-item.active {
+    background: rgba(62, 132, 200, .18);
+    color: #fff;
+    border-right-color: var(--gold);
+    font-weight: 600;
+}
+
+.nav-icon { font-size: 1.1rem; opacity: .9; }
+
+.sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+.sidebar-user { font-size: .78rem; opacity: .65; }
+
+.btn-logout {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, .18);
+    color: #c4d2e2;
+    border-radius: 10px;
+    padding: .55rem 1rem;
+    font-size: .9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    transition: all .15s;
+}
+
+.btn-logout:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+
+/* ── Main area ──────────────────────────────────────────────────────────── */
+
+.app-main {
+    flex: 1;
+    margin-right: 260px; /* RTL offset for the fixed sidebar */
+    min-height: 100vh;
+}
+
+.topbar {
+    background: var(--card);
+    border-bottom: 1px solid #e3eaf2;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.topbar-inner {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.topbar-title { color: var(--brand-800); font-weight: 700; }
+.topbar-meta { font-size: .8rem; color: var(--muted); }
+
+/* ── Cards & surfaces ───────────────────────────────────────────────────── */
+
+.card {
+    border: 1px solid #e6edf5;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    background: var(--card);
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid #eef2f7;
+    font-weight: 700;
+    color: var(--brand-800);
+    padding: 1rem 1.25rem;
+}
+
+/* ── Stat tiles (dashboard) ─────────────────────────────────────────────── */
+
+.stat-tile {
+    background: var(--card);
+    border: 1px solid #e6edf2;
+    border-radius: var(--radius);
+    padding: 1.4rem 1.5rem;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.stat-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(13, 27, 42, .10);
+}
+
+.stat-tile::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--accent), var(--gold));
+}
+
+.stat-label { color: var(--muted); font-size: .85rem; margin-bottom: .4rem; }
+.stat-value { font-size: 1.9rem; font-weight: 800; color: var(--brand-800); }
+.stat-sub { font-size: .78rem; color: var(--muted); margin-top: .3rem; }
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+
+.table {
+    font-size: .92rem;
+}
+
+.table thead th {
+    background: var(--brand-800);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    white-space: nowrap;
+}
+
+.table tbody tr { transition: background .1s; }
+.table tbody tr:hover { background: var(--accent-soft); }
+
+.table td { vertical-align: middle; }
+
+/* ── Status pills ───────────────────────────────────────────────────────── */
+
+.pill {
+    display: inline-block;
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pill-available   { background: #e4f7e8; color: #1c7a38; }
+.pill-rented      { background: #fdece3; color: #c0392b; }
+.pill-maintenance { background: #fdf3d7; color: #8a6d12; }
+.pill-active      { background: #e1efff; color: #1f5fa8; }
+.pill-completed   { background: #e4f7e8; color: #1c7a38; }
+.pill-cancelled   { background: #eaecef; color: #5a6572; }
+
+/* ── Forms ──────────────────────────────────────────────────────────────── */
+
+.form-label { font-weight: 600; color: var(--brand-800); font-size: .9rem; }
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), #2c6ba3);
+    border: none;
+    border-radius: 10px;
+    padding: .55rem 1.3rem;
+    font-weight: 600;
+}
+
+.btn-primary:hover { filter: brightness(1.08); }
+
+.btn-gold {
+    background: linear-gradient(135deg, var(--gold), #b88d1a);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-soft {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid #cfe0f2;
+    border-radius: 10px;
+}
+
+/* ── Login page ─────────────────────────────────────────────────────────── */
+
+.login-shell {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--brand-900) 0%, var(--brand-700) 60%, var(--accent) 150%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.login-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    justify-content: center;
+    margin-bottom: 1.8rem;
+}
+
+/* ── Misc ───────────────────────────────────────────────────────────────── */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+}
+
+.empty-state .icon { font-size: 3rem; opacity: .4; }
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    padding: .35rem .75rem;
+    border-radius: 8px;
+}
+
+.avatar-thumb {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid #e6edf2;
+    background: #f1f5f9;
+}
+
+/* Responsive: collapse the rail on small screens */
+@media (max-width: 991px) {
+    .app-sidebar { width: 72px; }
+    .brand-name, .brand-sub, .nav-item span:not(.nav-icon),
+    .sidebar-user, .btn-logout .nav-icon + span { display: none; }
+    .brand-mark { width: 40px; height: 40px; font-size: 1.2rem; }
+    .nav-item { justify-content: center; padding: .9rem; }
+    .app-main { margin-right: 72px; }
+    .sidebar-footer { padding: .8rem; }
+}

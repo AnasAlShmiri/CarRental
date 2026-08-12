@@ -1,0 +1,80 @@
+@model IEnumerable<CarRental.Domain.Models.Car>
+@{
+    ViewData["Title"] = "السيارات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="btn-group btn-group-sm" role="group">
+        <a class="btn @(ViewData["CurrentStatus"] is null ? "btn-gold" : "btn-soft")" asp-action="Index">الكل</a>
+                <a class="btn @((string)ViewData["CurrentStatus"] == "Available" ? "btn-gold" : "btn-soft")" asp-action="Index" asp-route-status="Available">متاحة</a>
+                <a class="btn @((string)ViewData["CurrentStatus"] == "Rented" ? "btn-gold" : "btn-soft")" asp-action="Index" asp-route-status="Rented">مؤجَّرة</a>
+                <a class="btn @((string)ViewData["CurrentStatus"] == "UnderMaintenance" ? "btn-gold" : "btn-soft")" asp-action="Index" asp-route-status="UnderMaintenance">صيانة</a>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">+ إضافة سيارة</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>الموديل</th>
+                    <th>الماركة</th>
+                    <th>السعر اليومي</th>
+                    <th>الحالة</th>
+                    <th>تاريخ الإضافة</th>
+                    <th class="text-start">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var car in Model)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrEmpty(car.ImageUrl))
+                            {
+                                <img src="@car.ImageUrl" alt="صورة السيارة" class="avatar-thumb" />
+                            }
+                            else
+                            {
+                                <div class="avatar-thumb d-flex align-items-center justify-content-center text-muted">⊟</div>
+                            }
+                        </td>
+                        <td class="fw-semibold">@car.Model</td>
+                        <td>@car.Brand</td>
+                        <td>@car.PricePerDay.ToString("N2") ر.س</td>
+                        <td>@StatusPill(car.Status)</td>
+                        <td class="text-muted">@car.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        <td class="text-start">
+                            <a asp-action="Details" asp-route-id="@car.Id" class="action-btn btn-soft">تفاصيل</a>
+                            <a asp-action="Edit" asp-route-id="@car.Id" class="action-btn btn-soft">تعديل</a>
+                            <a asp-action="Delete" asp-route-id="@car.Id" class="action-btn btn-soft text-danger">حذف</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="icon">⊞</div>
+                                لا توجد سيارات بعد — ابدأ بإضافة أول سيارة
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    string StatusPill(string status) => status switch
+    {
+        "Available"        => "<span class='pill pill-available'>متاحة</span>",
+        "Rented"           => "<span class='pill pill-rented'>مؤجَّرة</span>",
+        "UnderMaintenance" => "<span class='pill pill-maintenance'>قيد الصيانة</span>",
+        _ => $"<span class='pill'>{status}</span>"
+    };
+}

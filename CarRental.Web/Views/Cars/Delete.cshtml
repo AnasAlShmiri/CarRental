@@ -1,0 +1,31 @@
+@model CarRental.Domain.Models.Car
+@{
+    ViewData["Title"] = $"حذف السيارة — {Model.Brand} {Model.Model}";
+}
+
+<div class="card" style="max-width: 560px;">
+    <div class="card-header text-danger">تأكيد الحذف</div>
+    <div class="card-body">
+        <div class="d-flex gap-3 align-items-center mb-3">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="صورة السيارة" class="avatar-thumb" style="width: 120px; height: 90px;" />
+            }
+            <div>
+                <h5 class="mb-1">@Model.Brand @Model.Model</h5>
+                <div class="text-muted">السعر اليومي: @Model.PricePerDay.ToString("N2") ر.س — الحالة: @Model.Status</div>
+            </div>
+        </div>
+
+        <p class="text-danger fw-semibold">
+            هل أنت متأكد من حذف هذه السيارة؟ لا يمكن التراجع عن هذا الإجراء،
+            كما ستُحذف الصورة المرفوعة من الخادم.
+        </p>
+
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-flex gap-2">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">نعم، احذف</button>
+            <a asp-action="Index" class="btn btn-soft">إلغاء</a>
+        </form>
+    </div>
+</div>

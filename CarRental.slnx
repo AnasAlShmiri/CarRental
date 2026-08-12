@@ -3,4 +3,5 @@
   <Project Path="CarRental.Application/CarRental.Application.csproj" Id="cbb25610-4131-4c80-84d5-a1ca68e5e5a8" />
   <Project Path="CarRental.Domain/CarRental.Domain.csproj" Id="d746d246-e1be-4119-bfd4-a42eb482df4f" />
   <Project Path="CarRental.Infrastructure/CarRental.Infrastructure.csproj" Id="7f20076d-0deb-46f9-98c8-b00acba11546" />
+  <Project Path="CarRental.Web/CarRental.Web.csproj" />
 </Solution>

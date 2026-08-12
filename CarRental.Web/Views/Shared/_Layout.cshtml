@@ -1,0 +1,93 @@
+@*
+    CarRental.Web — Arabic RTL admin shell.
+    Built on Bootstrap 5 RTL (already bundled in wwwroot/lib) plus a small custom
+    palette. The sidebar is the app's signature: a fixed dark-rail layout with the
+    current page highlighted from route data.
+*@
+@{
+    var current = $"{ViewContext.RouteData.Values["controller"]}-{ViewContext.RouteData.Values["action"]}";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — نظام تأجير السيارات</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+    <div class="app-shell">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <aside class="app-sidebar">
+                <div class="sidebar-brand">
+                    <span class="brand-mark">C</span>
+                    <div>
+                        <span class="brand-name">تأجير السيارات</span>
+                        <span class="brand-sub">لوحة الإدارة</span>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <a class="nav-item @(current.StartsWith("Dashboard") ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                        <span class="nav-icon">◫</span> لوحة الإحصائيات
+                    </a>
+                    <a class="nav-item @(current.StartsWith("Cars") ? "active" : "")" asp-controller="Cars" asp-action="Index">
+                        <span class="nav-icon">⊞</span> السيارات
+                    </a>
+                    <a class="nav-item @(current.StartsWith("Customers") ? "active" : "")" asp-controller="Customers" asp-action="Index">
+                        <span class="nav-icon">☺</span> العملاء
+                    </a>
+                    <a class="nav-item @(current.StartsWith("Rentals") ? "active" : "")" asp-controller="Rentals" asp-action="Index">
+                        <span class="nav-icon">≋</span> الإيجارات
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-logout">
+                            <span class="nav-icon">⎋</span> تسجيل الخروج
+                        </button>
+                    </form>
+                    <span class="sidebar-user">مرحباً، @User.Identity?.Name</span>
+                </div>
+            </aside>
+        }
+
+        <main class="app-main">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="topbar">
+                    <div class="topbar-inner">
+                        <h4 class="topbar-title mb-0">@ViewData["Title"]</h4>
+                        <span class="topbar-meta">@DateTime.Now.ToString("dddd، d MMMM yyyy", new System.Globalization.CultureInfo("ar"))</span>
+                    </div>
+                </div>
+            }
+
+            <div class="container-fluid py-4">
+                @if (TempData["SuccessMessage"] is string success)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>✓ </strong>@success
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] is string error)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>✕ </strong>@error
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

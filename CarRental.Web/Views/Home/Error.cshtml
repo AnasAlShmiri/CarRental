@@ -1,0 +1,22 @@
+@model ErrorViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Title ?? "خطأ";
+}
+
+<div class="empty-state py-5">
+    <div class="icon">⚠</div>
+    <h4 class="mt-3">@Model.Title</h4>
+    @if (Model.HasDetail)
+    {
+        <p>@Model.Detail</p>
+    }
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-soft mt-2">العودة للوحة الإحصائيات</a>
+    }
+    else
+    {
+        <a asp-controller="Auth" asp-action="Login" class="btn btn-primary mt-2">تسجيل الدخول</a>
+    }
+</div>
