@@ -3,71 +3,72 @@
     ViewData["Title"] = "الإيجارات";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <span class="text-muted">إجمالي الإيجارات: <strong>@Model.Count()</strong></span>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">إدارة الإيجارات</h2>
+        <p class="page-description">تابع الحجوزات الحالية والمكتملة وأدر حالتها مباشرة.</p>
+    </div>
     <a asp-action="Create" class="btn btn-primary">+ حجز جديد</a>
 </div>
 
-<div class="card">
-    <div class="table-responsive">
-        <table class="table mb-0">
-            <thead>
+<div class="d-flex justify-content-end mb-3">
+    <span class="small text-muted">إجمالي الإيجارات: <strong class="text-dark">@Model.Count()</strong></span>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>السيارة</th>
+                <th>العميل</th>
+                <th>من</th>
+                <th>إلى</th>
+                <th>المدة</th>
+                <th>السعر الإجمالي</th>
+                <th>الحالة</th>
+                <th class="text-start">الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model)
+            {
                 <tr>
-                    <th>#</th>
-                    <th>السيارة</th>
-                    <th>العميل</th>
-                    <th>من</th>
-                    <th>إلى</th>
-                    <th>المدة</th>
-                    <th>السعر الإجمالي</th>
-                    <th>الحالة</th>
-                    <th class="text-start">الإجراءات</th>
+                    <td class="fw-semibold text-dark">@(r.Car is null ? $"سيارة #{r.CarId}" : $"{r.Car.Brand} {r.Car.Model}")</td>
+                    <td>@(r.Customer?.Name ?? $"عميل #{r.CustomerId}")</td>
+                    <td class="text-muted" dir="ltr">@r.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td class="text-muted" dir="ltr">@r.EndDate.ToString("yyyy-MM-dd")</td>
+                    <td>@r.DurationInDays يوم</td>
+                    <td class="fw-semibold text-dark">@r.TotalPrice.ToString("N2") ر.س</td>
+                    <td>@Html.Raw(StatusPill(r.Status))</td>
+                    <td class="text-start text-nowrap">
+                        <a asp-action="Details" asp-route-id="@r.Id" class="action-btn btn-soft">تفاصيل</a>
+                        @if (r.Status == "Active")
+                        {
+                            <form method="post" asp-action="Complete" asp-route-id="@r.Id" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="action-btn btn-soft text-success" onclick="return confirm('إكمال هذا الإيجار وإعادة السيارة للكتالوج؟')">إكمال</button>
+                            </form>
+                            <form method="post" asp-action="Cancel" asp-route-id="@r.Id" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="action-btn btn-soft text-danger" onclick="return confirm('إلغاء هذا الإيجار وإعادة السيارة للكتالوج؟')">إلغاء</button>
+                            </form>
+                        }
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model)
-                {
-                    <tr>
-                        <td>@r.Id</td>
-                        <td class="fw-semibold">@(r.Car is null ? $"سيارة #{r.CarId}" : $"{r.Car.Brand} {r.Car.Model}")</td>
-                        <td>@(r.Customer?.Name ?? $"عميل #{r.CustomerId}")</td>
-                        <td>@r.StartDate.ToString("yyyy-MM-dd")</td>
-                        <td>@r.EndDate.ToString("yyyy-MM-dd")</td>
-                        <td>@r.DurationInDays يوم</td>
-                        <td class="fw-bold">@r.TotalPrice.ToString("N2") ر.س</td>
-                        <td>@StatusPill(r.Status)</td>
-                        <td class="text-start">
-                            <a asp-action="Details" asp-route-id="@r.Id" class="action-btn btn-soft">تفاصيل</a>
-                            @if (r.Status == "Active")
-                            {
-                                <form method="post" asp-action="Complete" asp-route-id="@r.Id" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="action-btn btn-soft text-success"
-                                            onclick="return confirm('إكمال هذا الإيجار وإعادة السيارة للكتالوج؟')">إكمال</button>
-                                </form>
-                                <form method="post" asp-action="Cancel" asp-route-id="@r.Id" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="action-btn btn-soft text-warning"
-                                            onclick="return confirm('إلغاء هذا الإيجار وإعادة السيارة للكتالوج؟')">إلغاء</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="9">
-                            <div class="empty-state">
-                                <div class="icon">≋</div>
-                                لا توجد إيجارات بعد — أنشئ أول حجز
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <div class="icon">↔</div>
+                            <div class="mt-2">لا توجد إيجارات بعد — أنشئ أول حجز.</div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @functions {

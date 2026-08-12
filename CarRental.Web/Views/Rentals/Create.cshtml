@@ -3,53 +3,53 @@
     ViewData["Title"] = "حجز جديد";
 }
 
-@{
-    var cars = ViewData["Cars"] as dynamic;
-    var customers = ViewData["Customers"] as dynamic;
-}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">إنشاء حجز إيجار</h2>
+        <p class="page-description">اختر السيارة والعميل وتاريخ الإيجار لإتمام الحجز.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى الإيجارات</a>
+</div>
 
-<div class="card" style="max-width: 640px;">
-    <div class="card-header">إنشاء حجز إيجار</div>
-    <div class="card-body">
+<div class="card mx-auto" style="max-width: 840px;">
+    <div class="card-body p-4">
         <form method="post">
             @Html.AntiForgeryToken()
-
-            <div class="mb-3">
-                <label asp-for="CarId" class="form-label"></label>
-                <select asp-for="CarId" asp-items="SelectCars()" class="form-select">
-                    <option value="">— اختر سيارة —</option>
-                </select>
-                <span asp-validation-for="CarId" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="CustomerId" class="form-label"></label>
-                <select asp-for="CustomerId" asp-items="SelectCustomers()" class="form-select">
-                    <option value="">— اختر عميلاً —</option>
-                </select>
-                <span asp-validation-for="CustomerId" class="text-danger"></span>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="CarId" class="form-label"></label>
+                    <select asp-for="CarId" asp-items="SelectCars()" class="form-select">
+                        <option value="">— اختر سيارة —</option>
+                    </select>
+                    <span asp-validation-for="CarId" class="text-danger field-validation-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="CustomerId" class="form-label"></label>
+                    <select asp-for="CustomerId" asp-items="SelectCustomers()" class="form-select">
+                        <option value="">— اختر عميلاً —</option>
+                    </select>
+                    <span asp-validation-for="CustomerId" class="text-danger field-validation-error"></span>
+                </div>
+                <div class="col-md-6">
                     <label asp-for="StartDate" class="form-label"></label>
-                    <input asp-for="StartDate" class="form-control" type="date" dir="ltr" style="text-align:end" />
-                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                    <input asp-for="StartDate" class="form-control" type="date" dir="ltr" />
+                    <span asp-validation-for="StartDate" class="text-danger field-validation-error"></span>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-6">
                     <label asp-for="EndDate" class="form-label"></label>
-                    <input asp-for="EndDate" class="form-control" type="date" dir="ltr" style="text-align:end" />
-                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                    <input asp-for="EndDate" class="form-control" type="date" dir="ltr" />
+                    <span asp-validation-for="EndDate" class="text-danger field-validation-error"></span>
                 </div>
             </div>
 
-            <div class="alert alert-light border" id="durationHint">
-                المدة المحتسبة: <strong id="daysCount">—</strong> يوم (السعر النهائي يُحسب في الخادم × السعر اليومي للسيارة)
+            <div class="alert alert-light mt-4 mb-0" id="durationHint">
+                المدة المحتسبة: <strong id="daysCount">—</strong> يوم. يُحسب السعر النهائي في الخادم وفق السعر اليومي للسيارة.
             </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">إنشاء الحجز</button>
-                <a asp-action="Index" class="btn btn-soft">إلغاء</a>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-light px-3">إلغاء</a>
+                <button type="submit" class="btn btn-primary px-3">إنشاء الحجز</button>
             </div>
         </form>
     </div>

@@ -1,73 +1,92 @@
 @model CarRental.Application.DTOs.StatisticsDto
 @{
     ViewData["Title"] = "لوحة الإحصائيات";
+    var selectedMonths = ViewContext.HttpContext.Request.Query["months"].ToString();
 }
 
-<div class="row g-4 mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">نظرة عامة</h2>
+        <p class="page-description">تابع أسطول السيارات والإيجارات والإيرادات من مكان واحد.</p>
+    </div>
+    <a class="btn btn-primary btn-sm px-3" asp-controller="Cars" asp-action="Create">+ إضافة سيارة</a>
+</div>
+
+<div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <div class="stat-label">إجمالي السيارات</div>
-            <div class="stat-value">@Model.Cars.Total</div>
-            <div class="stat-sub">
-                متاح: @Model.Cars.Available · مؤجَّر: @Model.Cars.Rented · صيانة: @Model.Cars.UnderMaintenance
+            <span class="stat-icon" aria-hidden="true">▣</span>
+            <div>
+                <div class="stat-label">إجمالي السيارات</div>
+                <div class="stat-value">@Model.Cars.Total</div>
+                <div class="stat-sub">متاح: @Model.Cars.Available · مؤجر: @Model.Cars.Rented</div>
             </div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <div class="stat-label">العملاء</div>
-            <div class="stat-value">@Model.Customers.Total</div>
-            <div class="stat-sub">كل العملاء المسجلين في النظام</div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-tile">
-            <div class="stat-label">الإيجارات</div>
-            <div class="stat-value">@Model.Rentals.Total</div>
-            <div class="stat-sub">
-                نشط: @Model.Rentals.Active · مكتمل: @Model.Rentals.Completed · ملغى: @Model.Rentals.Cancelled
+            <span class="stat-icon success" aria-hidden="true">♙</span>
+            <div>
+                <div class="stat-label">العملاء</div>
+                <div class="stat-value">@Model.Customers.Total</div>
+                <div class="stat-sub">إجمالي العملاء المسجلين</div>
             </div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <div class="stat-label">الإيراد الكلي</div>
-            <div class="stat-value">@Model.Revenue.Total.ToString("N0") <small style="font-size:.9rem;color:var(--muted)">ر.س</small></div>
-            <div class="stat-sub">إيرادات الإيجارات المكتملة والنشطة</div>
+            <span class="stat-icon warning" aria-hidden="true">↔</span>
+            <div>
+                <div class="stat-label">الإيجارات</div>
+                <div class="stat-value">@Model.Rentals.Total</div>
+                <div class="stat-sub">نشط: @Model.Rentals.Active · مكتمل: @Model.Rentals.Completed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <span class="stat-icon danger" aria-hidden="true">ر.س</span>
+            <div>
+                <div class="stat-label">الإيراد الكلي</div>
+                <div class="stat-value">@Model.Revenue.Total.ToString("N0")</div>
+                <div class="stat-sub">إيرادات الإيجارات النشطة والمكتملة</div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-3">
     <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <section class="card h-100">
+            <div class="card-header d-flex flex-wrap justify-content-between gap-2">
                 <span>الإيراد الشهري</span>
-                <div class="btn-group btn-group-sm" role="group">
+                <div class="btn-group btn-group-sm" role="group" aria-label="المدة الزمنية للمخطط">
                     @foreach (var m in new[] { 3, 6, 12 })
                     {
-                        <a class="btn @(ViewContext.HttpContext.Request.Query["months"].ToString() == m.ToString() || (string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["months"]) && m == 6) ? "btn-gold" : "btn-soft")"
-                           asp-action="Index" asp-route-months="@m">@m شهر</a>
+                        var isSelected = selectedMonths == m.ToString() || (string.IsNullOrEmpty(selectedMonths) && m == 6);
+                        <a class="btn @(isSelected ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-months="@m">@m أشهر</a>
                     }
                 </div>
             </div>
             <div class="card-body">
-                <canvas id="revenueChart" height="120"></canvas>
+                <div class="chart-area">
+                    <canvas id="revenueChart"></canvas>
+                </div>
             </div>
-        </div>
+        </section>
     </div>
     <div class="col-lg-4">
-        <div class="card">
+        <section class="card h-100">
             <div class="card-header">ملخص الإيراد</div>
-            <div class="card-body">
-                <dl class="mb-0">
-                    <dt class="text-muted">إيراد محقق (مكتمل)</dt>
-                    <dd class="fw-bold fs-5 mb-3">@Model.Revenue.Total.ToString("N2") ر.س</dd>
-                    <dt class="text-muted">إيراد قيد التنفيذ (نشط)</dt>
-                    <dd class="fw-bold fs-5">@Model.Revenue.ActiveValue.ToString("N2") ر.س</dd>
+            <div class="card-body pt-4">
+                <dl class="summary-list mb-0">
+                    <dt>إيراد محقق (مكتمل)</dt>
+                    <dd>@Model.Revenue.Total.ToString("N2") ر.س</dd>
+                    <dt>إيراد قيد التنفيذ (نشط)</dt>
+                    <dd class="mb-0">@Model.Revenue.ActiveValue.ToString("N2") ر.س</dd>
                 </dl>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 
@@ -84,10 +103,11 @@
                 datasets: [{
                     label: 'الإيراد (ر.س)',
                     data: revenue,
-                    backgroundColor: 'rgba(62, 132, 200, .75)',
-                    borderColor: '#2c6ba3',
-                    borderWidth: 1,
-                    borderRadius: 8
+                    backgroundColor: '#1A73E8',
+                    hoverBackgroundColor: '#005BBF',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 44
                 }]
             },
             options: {
@@ -96,14 +116,15 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        callbacks: {
-                            label: ctx => `${ctx.parsed.y.toLocaleString('ar')} ر.س`
-                        }
+                        backgroundColor: '#111827',
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: { label: ctx => `${ctx.parsed.y.toLocaleString('ar')} ر.س` }
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#eef2f7' } },
-                    x: { grid: { display: false } }
+                    y: { beginAtZero: true, border: { display: false }, grid: { color: '#E5E7EB' }, ticks: { color: '#6B7280' } },
+                    x: { border: { display: false }, grid: { display: false }, ticks: { color: '#6B7280' } }
                 }
             }
         });

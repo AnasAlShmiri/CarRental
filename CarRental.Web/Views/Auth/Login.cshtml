@@ -16,16 +16,21 @@
     <div class="login-shell">
         <div class="login-card">
             <div class="login-brand">
-                <span class="brand-mark">C</span>
-                <h3 class="mb-0" style="color: var(--brand-800); font-weight: 800;">نظام تأجير السيارات</h3>
+                <span class="brand-mark">▣</span>
+                <div>
+                    <h1 class="h5 mb-0 fw-bold text-dark">تأجير السيارات</h1>
+                    <span class="small text-muted">لوحة الإدارة</span>
+                </div>
             </div>
-            <p class="text-center text-muted mb-4">لوحة الإدارة — سجّل الدخول للمتابعة</p>
+            <div class="text-center mb-4">
+                <h2 class="h4 text-dark mb-2">مرحباً بعودتك</h2>
+                <p class="text-muted small mb-0">سجّل الدخول للمتابعة إلى لوحة التحكم.</p>
+            </div>
 
             @if (ViewData.ModelState.ErrorCount > 0)
             {
                 <div class="alert alert-danger" role="alert">
-                    <strong>✕ </strong>
-                    <div asp-validation-summary="All" class="text-danger"></div>
+                    <div asp-validation-summary="All" class="text-danger mb-0"></div>
                 </div>
             }
 
@@ -38,27 +43,25 @@
 
                 <div class="mb-3">
                     <label asp-for="Username" class="form-label"></label>
-                    <input asp-for="Username" class="form-control form-control-lg" autocomplete="username" />
-                    <span asp-validation-for="Username" class="text-danger"></span>
+                    <input asp-for="Username" class="form-control" autocomplete="username" />
+                    <span asp-validation-for="Username" class="text-danger field-validation-error"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" class="form-control form-control-lg" type="password" autocomplete="current-password" />
-                    <span asp-validation-for="Password" class="text-danger"></span>
+                    <input asp-for="Password" class="form-control" type="password" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger field-validation-error"></span>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <input asp-for="RememberMe" class="form-check-input" />
-                        <label asp-for="RememberMe" class="form-check-label"></label>
-                    </div>
+                <div class="form-check mb-4">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 btn-lg">تسجيل الدخول</button>
+                <button type="submit" class="btn btn-primary w-100">تسجيل الدخول</button>
             </form>
 
-            <p class="text-center text-muted mt-4 mb-0" style="font-size: .8rem;">
+            <p class="text-center text-muted mt-4 mb-0 small">
                 الحساب الافتراضي للتطوير: <code>admin</code> / <code>Admin&#64;12345</code>
             </p>
         </div>

@@ -3,44 +3,55 @@
     ViewData["Title"] = "إضافة سيارة";
 }
 
-<div class="card" style="max-width: 640px;">
-    <div class="card-header">بيانات السيارة الجديدة</div>
-    <div class="card-body">
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">إضافة سيارة جديدة</h2>
+        <p class="page-description">أدخل بيانات السيارة لإضافتها إلى أسطول التأجير.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى السيارات</a>
+</div>
+
+<div class="card mx-auto" style="max-width: 840px;">
+    <div class="card-body p-4">
         <form method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
 
-            <div class="mb-3">
-                <label asp-for="CarModel" class="form-label"></label>
-                <input asp-for="CarModel" class="form-control" placeholder="مثال: كامري" />
-                <span asp-validation-for="CarModel" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Brand" class="form-label"></label>
-                <input asp-for="Brand" class="form-control" placeholder="مثال: تويوتا" />
-                <span asp-validation-for="Brand" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="PricePerDayText" class="form-label"></label>
-                <div class="input-group" style="max-width: 320px;">
-                    <input asp-for="PricePerDayText" class="form-control" type="text" inputmode="decimal" placeholder="150.50" dir="ltr" />
-                    <span class="input-group-text">ر.س</span>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Brand" class="form-label"></label>
+                    <input asp-for="Brand" class="form-control" placeholder="مثال: تويوتا" />
+                    <span asp-validation-for="Brand" class="text-danger field-validation-error"></span>
                 </div>
-                <span asp-validation-for="PricePerDayText" class="text-danger"></span>
-                <div class="form-text">اكتب السعر بالنقطة العشرية: 150.50 — تُقرأ القيمة بالثقافة المحايدة مهما كانت لغة المتصفح</div>
+                <div class="col-md-6">
+                    <label asp-for="CarModel" class="form-label"></label>
+                    <input asp-for="CarModel" class="form-control" placeholder="مثال: كامري" />
+                    <span asp-validation-for="CarModel" class="text-danger field-validation-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PricePerDayText" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="PricePerDayText" class="form-control" type="text" inputmode="decimal" placeholder="150.50" dir="ltr" />
+                        <span class="input-group-text">ر.س</span>
+                    </div>
+                    <span asp-validation-for="PricePerDayText" class="text-danger field-validation-error"></span>
+                </div>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Image" class="form-label"></label>
-                <input asp-for="Image" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
-                <div class="form-text">اختياري — jpg / jpeg / png / gif / webp حتى 5 ميجابايت. يُتحقق من المحتوى الحقيقي للملف، ويُخزَّن باسم مولَّد آمن لا يُسمح له بالخروج من مجلد الصور</div>
-                <span asp-validation-for="Image" class="text-danger"></span>
+            <div class="form-section mt-4">
+                <div class="form-section-title">صورة السيارة</div>
+                <div class="image-upload-panel">
+                    <span class="upload-icon" aria-hidden="true">☁</span>
+                    <div class="fw-semibold text-dark mb-1">اسحب الصورة هنا أو اختر ملفاً للرفع</div>
+                    <div class="small text-muted mb-3">JPG أو JPEG أو PNG أو GIF أو WEBP حتى 5 ميجابايت</div>
+                    <input asp-for="Image" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
+                    <span asp-validation-for="Image" class="text-danger field-validation-error text-start"></span>
+                </div>
             </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">إضافة السيارة</button>
-                <a asp-action="Index" class="btn btn-soft">إلغاء</a>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-light px-3">إلغاء</a>
+                <button type="submit" class="btn btn-primary px-3">حفظ السيارة</button>
             </div>
         </form>
     </div>

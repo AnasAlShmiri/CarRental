@@ -3,52 +3,61 @@
     ViewData["Title"] = "العملاء";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <span class="text-muted">إجمالي العملاء: <strong>@Model.Count()</strong></span>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">إدارة العملاء</h2>
+        <p class="page-description">تابع بيانات العملاء المسجلين في نظام تأجير السيارات.</p>
+    </div>
     <a asp-action="Create" class="btn btn-primary">+ إضافة عميل</a>
 </div>
 
-<div class="card">
-    <div class="table-responsive">
-        <table class="table mb-0">
-            <thead>
+<div class="d-flex justify-content-end mb-3">
+    <span class="small text-muted">إجمالي العملاء: <strong class="text-dark">@Model.Count()</strong></span>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>العميل</th>
+                <th>البريد الإلكتروني</th>
+                <th>الهاتف</th>
+                <th>تاريخ التسجيل</th>
+                <th class="text-start">الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                var initial = string.IsNullOrWhiteSpace(c.Name) ? "ع" : c.Name[..1].ToUpperInvariant();
                 <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>البريد الإلكتروني</th>
-                    <th>الهاتف</th>
-                    <th>تاريخ التسجيل</th>
-                    <th class="text-start">الإجراءات</th>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar-initial">@initial</span>
+                            <span class="fw-semibold text-dark">@c.Name</span>
+                        </div>
+                    </td>
+                    <td dir="ltr" class="text-end">@c.Email</td>
+                    <td dir="ltr" class="text-end">@c.Phone</td>
+                    <td class="text-muted" dir="ltr">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td class="text-start text-nowrap">
+                        <a asp-action="Details" asp-route-id="@c.Id" class="action-btn btn-soft">تفاصيل</a>
+                        <a asp-action="Edit" asp-route-id="@c.Id" class="action-btn btn-soft">تعديل</a>
+                        <a asp-action="Delete" asp-route-id="@c.Id" class="action-btn btn-soft text-danger">حذف</a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var c in Model)
-                {
-                    <tr>
-                        <td>@c.Id</td>
-                        <td class="fw-semibold">@c.Name</td>
-                        <td dir="ltr" class="text-end">@c.Email</td>
-                        <td dir="ltr" class="text-end">@c.Phone</td>
-                        <td class="text-muted">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
-                        <td class="text-start">
-                            <a asp-action="Details" asp-route-id="@c.Id" class="action-btn btn-soft">تفاصيل</a>
-                            <a asp-action="Edit" asp-route-id="@c.Id" class="action-btn btn-soft">تعديل</a>
-                            <a asp-action="Delete" asp-route-id="@c.Id" class="action-btn btn-soft text-danger">حذف</a>
-                        </td>
-                    </tr>
-                }
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <div class="icon">☺</div>
-                                لا يوجد عملاء بعد — أضف أول عميل
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <div class="icon">♙</div>
+                            <div class="mt-2">لا يوجد عملاء بعد — أضف أول عميل.</div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
