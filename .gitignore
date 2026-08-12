@@ -370,3 +370,5 @@ CarRental.API/wwwroot/uploads/*
 *.db
 *.db-shm
 *.db-wal
+CarRental.Web/wwwroot/uploads/*
+!CarRental.Web/wwwroot/uploads/.gitkeep
