@@ -1,0 +1,41 @@
+@model CarRental.Domain.Models.Car
+@{
+    ViewData["Title"] = $"حذف السيارة — {Model.Brand} {Model.Model}";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">تأكيد حذف السيارة</h2>
+        <p class="page-description">راجع بيانات السيارة قبل تنفيذ الإجراء النهائي.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى السيارات</a>
+</div>
+
+<div class="card mx-auto" style="max-width: 620px;">
+    <div class="card-body p-4">
+        <div class="d-flex gap-3 align-items-center mb-4">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="صورة السيارة" class="avatar-thumb" style="width: 120px; height: 82px;" />
+            }
+            else
+            {
+                <span class="avatar-initial">س</span>
+            }
+            <div>
+                <h3 class="h6 text-dark mb-1">@Model.Brand @Model.Model</h3>
+                <div class="small text-muted">السعر اليومي: @Model.PricePerDay.ToString("N2") ر.س</div>
+            </div>
+        </div>
+
+        <div class="alert alert-danger mb-4">
+            هل أنت متأكد من حذف هذه السيارة؟ لا يمكن التراجع عن الإجراء، وستُحذف الصورة المرفوعة من الخادم.
+        </div>
+
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-flex justify-content-end gap-2">
+            @Html.AntiForgeryToken()
+            <a asp-action="Index" class="btn btn-light">إلغاء</a>
+            <button type="submit" class="btn btn-danger">نعم، احذف السيارة</button>
+        </form>
+    </div>
+</div>

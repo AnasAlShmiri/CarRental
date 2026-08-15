@@ -1,0 +1,100 @@
+@model RentalViewModel
+@{
+    ViewData["Title"] = "حجز جديد";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">إنشاء حجز إيجار</h2>
+        <p class="page-description">اختر السيارة والعميل وتاريخ الإيجار لإتمام الحجز.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى الإيجارات</a>
+</div>
+
+<div class="card mx-auto" style="max-width: 840px;">
+    <div class="card-body p-4">
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="CarId" class="form-label"></label>
+                    <select asp-for="CarId" asp-items="SelectCars()" class="form-select">
+                        <option value="">— اختر سيارة —</option>
+                    </select>
+                    <span asp-validation-for="CarId" class="text-danger field-validation-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="CustomerId" class="form-label"></label>
+                    <select asp-for="CustomerId" asp-items="SelectCustomers()" class="form-select">
+                        <option value="">— اختر عميلاً —</option>
+                    </select>
+                    <span asp-validation-for="CustomerId" class="text-danger field-validation-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="StartDate" class="form-label"></label>
+                    <input asp-for="StartDate" class="form-control" type="date" dir="ltr" />
+                    <span asp-validation-for="StartDate" class="text-danger field-validation-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="EndDate" class="form-label"></label>
+                    <input asp-for="EndDate" class="form-control" type="date" dir="ltr" />
+                    <span asp-validation-for="EndDate" class="text-danger field-validation-error"></span>
+                </div>
+            </div>
+
+            <div class="alert alert-light mt-4 mb-0" id="durationHint">
+                المدة المحتسبة: <strong id="daysCount">—</strong> يوم. يُحسب السعر النهائي في الخادم وفق السعر اليومي للسيارة.
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-light px-3">إلغاء</a>
+                <button type="submit" class="btn btn-primary px-3">إنشاء الحجز</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        function daysBetween(a, b) {
+            if (!a || !b) return null;
+            const d = (new Date(b) - new Date(a)) / 86400000;
+            return d >= 1 ? Math.floor(d) : null;
+        }
+        function refreshHint() {
+            const s = document.querySelector('#@nameof(Model.StartDate)').value;
+            const e = document.querySelector('#@nameof(Model.EndDate)').value;
+            document.getElementById('daysCount').textContent = daysBetween(s, e) ?? '—';
+        }
+        document.querySelectorAll('#@nameof(Model.StartDate), #@nameof(Model.EndDate)')
+            .forEach(el => el.addEventListener('change', refreshHint));
+        refreshHint();
+    </script>
+}
+
+@functions {
+    List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> SelectCars()
+    {
+        var items = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        var src = ViewData["Cars"];
+        if (src is System.Collections.IEnumerable enumerable)
+            foreach (object c in enumerable)
+                items.Add(new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(
+                    ((dynamic)c).Label, ((dynamic)c).Id.ToString()));
+        return items;
+    }
+
+    List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> SelectCustomers()
+    {
+        var items = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        var src = ViewData["Customers"];
+        if (src is System.Collections.IEnumerable enumerable)
+            foreach (object c in enumerable)
+                items.Add(new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(
+                    ((dynamic)c).Label, ((dynamic)c).Id.ToString()));
+        return items;
+    }
+}

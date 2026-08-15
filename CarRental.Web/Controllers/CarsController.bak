@@ -1,0 +1,155 @@
+using CarRental.Application.Interfaces;
+using System.Globalization;
+using CarRental.Domain.Models;
+using CarRental.Web.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace CarRental.Web.Controllers;
+
+[Authorize]
+public class CarsController(ICarRepository repo, ICarImageStorage images) : Controller
+{
+    // GET: /cars
+    public async Task<IActionResult> Index([FromQuery] string? status)
+    {
+        var cars = status is null || !CarStatus.IsValid(status)
+            ? await repo.GetAllAsync()
+            : await repo.GetByStatusAsync(status);
+
+        ViewData["CurrentStatus"] = status;
+        return View(cars);
+    }
+
+    // GET: /cars/details/5
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id is null) return RedirectToAction("Index");
+
+        var car = await repo.GetByIdAsync(id.Value);
+        if (car is null) return NotFound(new ErrorViewModel
+        {
+            Title = "السيارة غير موجودة",
+            Detail = $"السيارة رقم {id} غير موجودة في النظام."
+        });
+
+        return View(car);
+    }
+
+    // GET: /cars/create
+    [HttpGet]
+    public IActionResult Create() => View(new CarViewModelLean());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CarViewModelLean model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errs = string.Join("; ", ModelState
+                .Where(kv => kv.Value is { Errors.Count: > 0 })
+                .SelectMany(kv => kv.Value!.Errors.Select(e => $"{kv.Key}: {e.ErrorMessage}")));
+            if (!string.IsNullOrEmpty(errs))
+                TempData["ErrorMessage"] = errs;
+            return View(model);
+        }
+
+        await repo.CreateAsync(new Car
+        {
+            Model = model.Model,
+            Brand = model.Brand,
+            PricePerDay = 0m
+        });
+
+        TempData["SuccessMessage"] = "تمت إضافة السيارة بنجاح";
+        return RedirectToAction("Index");
+    }
+
+    // GET: /cars/edit/5
+    [HttpGet]
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id is null) return RedirectToAction("Index");
+
+        var car = await repo.GetByIdAsync(id.Value);
+        if (car is null) return NotFound();
+
+        return View(new CarViewModelLean
+        {
+            Id = car.Id,
+            Model = car.Model,
+            Brand = car.Brand
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, CarViewModelLean model)
+    {
+        if (id != model.Id) return RedirectToAction("Index");
+
+        if (!ModelState.IsValid)
+        {
+            ShowModelStateErrors();
+            model.Id = id;
+            return View(model);
+        }
+
+        var updated = await repo.UpdateAsync(id, model.Model, model.Brand, 0m, null, null);
+
+        if (updated is null)
+        {
+            return NotFound();
+        }
+
+        TempData["SuccessMessage"] = "تم تعديل بيانات السيارة بنجاح";
+        return RedirectToAction("Index");
+    }
+
+    private void ShowModelStateErrors()
+    {
+        var errs = string.Join("; ", ModelState
+            .Where(kv => kv.Value is { Errors.Count: > 0 })
+            .SelectMany(kv => kv.Value!.Errors.Select(e => $"{kv.Key}: {e.ErrorMessage}")));
+        if (!string.IsNullOrEmpty(errs))
+            TempData["ErrorMessage"] = errs;
+    }
+
+    // GET: /cars/delete/5
+    [HttpGet]
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id is null) return RedirectToAction("Index");
+
+        var car = await repo.GetByIdAsync(id.Value);
+        if (car is null) return NotFound();
+
+        return View(car);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var car = await repo.GetByIdAsync(id);
+        if (car is null) return NotFound();
+
+        if (await repo.HasActiveRentalsAsync(id))
+        {
+            TempData["ErrorMessage"] = "لا يمكن حذف سيارة عليها إيجار نشط — أنهِ أو ألغِ الإيجار أولاً";
+            return RedirectToAction("Index");
+        }
+
+        if (await repo.HasAnyRentalsAsync(id))
+        {
+            TempData["ErrorMessage"] = "لا يمكن حذف سيارة لها سجل إيجارات — غيّر حالتها إلى 'UnderMaintenance' لإخراجها من الخدمة بدلاً من الحذف";
+            return RedirectToAction("Index");
+        }
+
+        await repo.DeleteAsync(id);
+        images.TryDelete(car.ImageUrl);
+
+        TempData["SuccessMessage"] = "تم حذف السيارة بنجاح";
+        return RedirectToAction("Index");
+    }
+}

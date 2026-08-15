@@ -1,0 +1,35 @@
+@model CarRental.Domain.Models.Customer
+@{
+    ViewData["Title"] = $"حذف العميل — {Model.Name}";
+    var initial = string.IsNullOrWhiteSpace(Model.Name) ? "ع" : Model.Name[..1].ToUpperInvariant();
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">تأكيد حذف العميل</h2>
+        <p class="page-description">راجع بيانات العميل قبل تنفيذ الإجراء النهائي.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى العملاء</a>
+</div>
+
+<div class="card mx-auto" style="max-width: 620px;">
+    <div class="card-body p-4">
+        <div class="d-flex gap-3 align-items-center mb-4">
+            <span class="avatar-initial">@initial</span>
+            <div>
+                <h3 class="h6 text-dark mb-1">@Model.Name</h3>
+                <div class="small text-muted" dir="ltr">@Model.Email</div>
+            </div>
+        </div>
+
+        <div class="alert alert-danger mb-4">
+            هل أنت متأكد من حذف هذا العميل؟ إذا كان له سجل إيجارات فلن يتم الحذف حفاظاً على التكامل المرجعي مع الحسابات المالية.
+        </div>
+
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-flex justify-content-end gap-2">
+            @Html.AntiForgeryToken()
+            <a asp-action="Index" class="btn btn-light">إلغاء</a>
+            <button type="submit" class="btn btn-danger">نعم، احذف العميل</button>
+        </form>
+    </div>
+</div>

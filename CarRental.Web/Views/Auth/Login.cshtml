@@ -1,0 +1,77 @@
+@model LoginViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "تسجيل الدخول";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تسجيل الدخول — نظام تأجير السيارات</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="login-shell">
+        <div class="login-card">
+            <div class="login-brand">
+                <span class="brand-mark"><i class="bi bi-car-front-fill"></i></span>
+                <div>
+                    <h1 class="h5 mb-0 fw-bold text-dark">تأجير السيارات</h1>
+                    <span class="small text-muted">لوحة الإدارة</span>
+                </div>
+            </div>
+            <div class="text-center mb-4">
+                <h2 class="h4 text-dark mb-2">مرحباً بعودتك</h2>
+                <p class="text-muted small mb-0">سجّل الدخول للمتابعة إلى لوحة التحكم.</p>
+            </div>
+
+            @if (ViewData.ModelState.ErrorCount > 0)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <div asp-validation-summary="All" class="text-danger mb-0"></div>
+                </div>
+            }
+
+            <form method="post" asp-action="Login">
+                @Html.AntiForgeryToken()
+                @if (!string.IsNullOrEmpty(ViewData["ReturnUrl"] as string))
+                {
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                }
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label"></label>
+                    <input asp-for="Username" class="form-control" autocomplete="username" />
+                    <span asp-validation-for="Username" class="text-danger field-validation-error"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" type="password" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger field-validation-error"></span>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">تسجيل الدخول</button>
+            </form>
+
+            <p class="text-center text-muted mt-4 mb-0 small">
+                الحساب الافتراضي للتطوير: <code>admin</code> / <code>Admin&#64;12345</code>
+            </p>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+@model CarRental.Application.DTOs.StatisticsDto
+@{
+    ViewData["Title"] = "لوحة الإحصائيات";
+    var selectedMonths = ViewContext.HttpContext.Request.Query["months"].ToString();
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h2 class="page-heading mb-0">نظرة عامة</h2>
+        <p class="page-description">تابع أسطول السيارات والإيجارات والإيرادات من مكان واحد.</p>
+    </div>
+    <a class="btn btn-primary btn-sm px-3" asp-controller="Cars" asp-action="Create"><i class="bi bi-plus-lg ms-1"></i>إضافة سيارة</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <span class="stat-icon" aria-hidden="true"><i class="bi bi-car-front"></i></span>
+            <div>
+                <div class="stat-label">إجمالي السيارات</div>
+                <div class="stat-value">@Model.Cars.Total</div>
+                <div class="stat-sub">متاح: @Model.Cars.Available · مؤجر: @Model.Cars.Rented</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <span class="stat-icon success" aria-hidden="true"><i class="bi bi-people"></i></span>
+            <div>
+                <div class="stat-label">العملاء</div>
+                <div class="stat-value">@Model.Customers.Total</div>
+                <div class="stat-sub">إجمالي العملاء المسجلين</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <span class="stat-icon warning" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
+            <div>
+                <div class="stat-label">الإيجارات</div>
+                <div class="stat-value">@Model.Rentals.Total</div>
+                <div class="stat-sub">نشط: @Model.Rentals.Active · مكتمل: @Model.Rentals.Completed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-tile">
+            <span class="stat-icon danger" aria-hidden="true"><i class="bi bi-cash-stack"></i></span>
+            <div>
+                <div class="stat-label">الإيراد الكلي</div>
+                <div class="stat-value">@Model.Revenue.Total.ToString("N0")</div>
+                <div class="stat-sub">إيرادات الإيجارات النشطة والمكتملة</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <section class="card h-100">
+            <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+                <span>الإيراد الشهري</span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="المدة الزمنية للمخطط">
+                    @foreach (var m in new[] { 3, 6, 12 })
+                    {
+                        var isSelected = selectedMonths == m.ToString() || (string.IsNullOrEmpty(selectedMonths) && m == 6);
+                        <a class="btn @(isSelected ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-months="@m">@m أشهر</a>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-4">
+        <section class="card h-100">
+            <div class="card-header">ملخص الإيراد</div>
+            <div class="card-body pt-4">
+                <dl class="summary-list mb-0">
+                    <dt>إيراد محقق (مكتمل)</dt>
+                    <dd>@Model.Revenue.Total.ToString("N2") ر.س</dd>
+                    <dt>إيراد قيد التنفيذ (نشط)</dt>
+                    <dd class="mb-0">@Model.Revenue.ActiveValue.ToString("N2") ر.س</dd>
+                </dl>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@@4"></script>
+    <script>
+        const months = @Html.Raw(ViewData["MonthsLabel"]);
+        const revenue = @Html.Raw(ViewData["RevenueSeries"]);
+
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'الإيراد (ر.س)',
+                    data: revenue,
+                    backgroundColor: '#1A73E8',
+                    hoverBackgroundColor: '#005BBF',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 44
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#111827',
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: { label: ctx => `${ctx.parsed.y.toLocaleString('ar')} ر.س` }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, border: { display: false }, grid: { color: '#E5E7EB' }, ticks: { color: '#6B7280' } },
+                    x: { border: { display: false }, grid: { display: false }, ticks: { color: '#6B7280' } }
+                }
+            }
+        });
+    </script>
+}

@@ -18,6 +18,9 @@ public class Rental
     [Range(0, double.MaxValue)]
     public decimal TotalPrice { get; set; }
 
+    /// <summary>Computed billing days (whole calendar days, minimum one) — shared by API DTOs and MVC views.</summary>
+    public int DurationInDays => Math.Max(1, (EndDate.Date - StartDate.Date).Days);
+
     /// <summary>One of <see cref="RentalStatus"/>.</summary>
     [MaxLength(20)]
     public string Status { get; set; } = RentalStatus.Active;
