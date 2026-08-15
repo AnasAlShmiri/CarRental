@@ -58,3 +58,58 @@
 - `/tmp/full_e2e.py`: جميع الاختبارات نجحت، بما في ذلك إضافة سيارتين، إضافة عميل، إنشاء إيجار، إكمال الإيجار، الإحصاءات، صورة السيارة، وتصيير الحالات.
 - مزود الاختبار: SQLite عبر `/tmp/cr_redesign.db`.
 
+
+
+## حالة التنفيذ — خطة التحسين الجديدة (2026-08-15)
+المستخدم أرسل دليل الدورة التدريبية (PDF في /home/ubuntu/upload/pasted_file_tAzYCO_DOC-20260701-WA0002..pdf) وطلب تنفيذ خطة التحسين خطوة بخطوة كـ Full-Stack.
+خطة التحسين الكاملة مكتوبة في /home/ubuntu/CarRental/خطة-تحسين-المشروع.md.
+
+### المتطلبات الإلزامية الناقصة (من الدليل):
+- Bootstrap Icons (غير موجودة) — CDN 1.11.3 أُضيف في _Layout.cshtml.
+- خط مخصص — Tajawal من Google Fonts أُضيف في _Layout.cshtml ويحتاج إضافة CSS variable --font-arabic في site.css وتطبيقه على body.
+- Bootstrap Modal (غير موجودة) — تحويل أزرار الحذف في Cars/Customers/Rentals Index إلى Modal.
+- DataTables.js (غير موجودة) — إضافة CDN للجداول الثلاثة مع اللغة العربية.
+- Flutter App (W8) — لم يبدأ بعد.
+
+### الخطوات المنفذة حتى الآن:
+1. _Layout.cshtml: أُضيف CDN لـ bootstrap-icons 1.11.3 وخط Tajawal (400/500/700/800)، واستُبدلت الرموز النصية (◫ ▣ ♙ ↔ ⇥) بأيقونات bi: speedometer2, car-front, people, arrow-repeat, box-arrow-right, brand-mark bi-car-front-fill.
+
+### الخطوات المتبقية للمرحلة 1:
+2. site.css: إضافة :root { --font-arabic: 'Tajawal', sans-serif; } وتطبيق font-family على body.
+3. استبدال باقي الرموز النصية في الصفحات (▣ في Index, ♙, ↔) بأيقونات Bootstrap في أزرار الإجراءات وصفحات Index.
+4. تحويل أزرار الحذف/إكمال/إلغاء إلى Bootstrap Modal.
+5. DataTables.js: CDN 2.x مع language عربية (sEmptyTable="لا توجد بيانات"، sSearch="بحث"، sLengthMenu="عرض _MENU_"، sInfo="من _START_ إلى _END_ من _TOTAL_"، pagination numbers).
+6. بناء: dotnet build -v q من CarRental.Web (ملاحظة: dotnet SDK 10.0 مثبت في هذه البيئة).
+7. اختبار: قاعدة SQLite عبر:
+   cd /home/ubuntu/CarRental/CarRental.Web && pkill -f CarRental.Web; rm -f /tmp/cr_redesign.db; DatabaseProvider=Sqlite ConnectionStrings__DefaultConnection='Data Source=/tmp/cr_redesign.db' ASPNETCORE_ENVIRONMENT=Development nohup dotnet run --no-build --urls http://127.0.0.1:5110 > /tmp/carrental-web.log 2>&1 &
+   ثم تشغيل: python3 /tmp/full_e2e.py من /home/ubuntu/CarRental.
+8. فرع جديد features/modal-datatable-icons ثم PR إلى master.
+
+### معلومات مهمة:
+- اختبار e2e: /tmp/full_e2e.py (يتوقع server على 5110، تسجيل دخول admin/Admin@12345).
+- الـ API على المنفذ 5109 (CarRental.API) — لـ Flutter: login endpoint POST /api/auth/login بإرجاع JWT.
+- ملاحظة Flutter في المحاكي: Android emulator يصل للخادم المحلي عبر http://10.0.2.2:5109.
+- commit آخر على master: 5aae920 (Redesign Arabic RTL MVC dashboard).
+
+
+## تقدم المرحلة 1 (المكتمل حتى الآن — 2026-08-15)
+- _Layout.cshtml: CDN bootstrap-icons 1.11.3 + خط Tajawal + أيقونات الشريط الجانبي (bi-speedometer2, bi-car-front, bi-people, bi-arrow-repeat, bi-box-arrow-right, brand bi-car-front-fill).
+- site.css: أضيف --font-arabic: 'Tajawal', ... وتُطبق على body.
+- Login.cshtml: CDN + خط + brand-mark bi-car-front-fill.
+- Dashboard/Index.cshtml: stat-icons bi-car-front, bi-people, bi-arrow-repeat, bi-cash-stack + زر إضافة bi-plus-lg.
+- Cars/Index.cshtml: أيقونات إجراءات (bi-eye, bi-pencil, bi-trash)، empty icon bi-car-front، DataTables 1.13.7 + Bootstrap5 مع اللغة العربية، Modal حذف #deleteCarModal مع form action ديناميكي.
+- Customers/Index.cshtml: نفس النمط — Modal #deleteCustomerModal + DataTables عربية.
+- Rentals/Index.cshtml: Modal إكمال #completeRentalModal (نجاح أخضر) + Modal إلغاء #cancelRentalModal (خطر أحمر) + DataTables عربية، مع bindRentalModal عبر استبدال __ACTION__ بـ Complete/Cancel.
+
+### المتبقي للمرحلة 1:
+1. التحقق من عدم وجود رموز unicode متبقية: grep -rn '[▣◫♙↔⇥]' CarRental.Web/Views.
+2. build: cd CarRental.Web && dotnet build -v q.
+3. تشغيل على SQLite جديدة ثم python3 /tmp/full_e2e.py (المسار: /home/ubuntu/CarRental).
+4. التحقق البصري في المتصفح (localhost:5110).
+5. git branch features/modal-datatable-icons (من mvc-dashboard أو master؟ — الخطة تقترح features جديد + PR إلى master).
+6. ملاحظة مهمة: DataTables يُفعل على .table — صف empty-state قد يتضارب مع pagination؛ يجب التأكد أن empty row (colspan) لا يكسر DataTables.
+
+### معلومات GitHub:
+- المستودع: AnasAlShmiri/CarRental، branch الحالي المفعّل mvc-dashboard.
+- آخر commit: 5aae920 Redesign Arabic RTL MVC dashboard (على mvc-dashboard).
+- master على origin/master. PRs تستخدم gh: gh pr create --base master --head features/modal-datatable-icons.

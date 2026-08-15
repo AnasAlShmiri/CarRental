@@ -19,6 +19,7 @@
     --warning-soft: #FEF3C7;
     --danger: #BA1A1A;
     --danger-soft: #FEE2E2;
+    --font-arabic: 'Tajawal', 'Segoe UI', 'Tahoma', 'Noto Kufi Arabic', Arial, sans-serif;
     --radius-sm: 8px;
     --radius: 12px;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
@@ -32,7 +33,7 @@ body {
     margin: 0;
     background: var(--page);
     color: var(--body);
-    font-family: "Segoe UI", "Tahoma", "Noto Kufi Arabic", Arial, sans-serif;
+    font-family: var(--font-arabic);
     font-size: .925rem;
     line-height: 1.6;
 }

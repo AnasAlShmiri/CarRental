@@ -8,7 +8,7 @@
         <h2 class="page-heading mb-0">إدارة الإيجارات</h2>
         <p class="page-description">تابع الحجوزات الحالية والمكتملة وأدر حالتها مباشرة.</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ حجز جديد</a>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-calendar-plus ms-1"></i>حجز جديد</a>
 </div>
 
 <div class="d-flex justify-content-end mb-3">
@@ -41,17 +41,11 @@
                     <td class="fw-semibold text-dark">@r.TotalPrice.ToString("N2") ر.س</td>
                     <td>@Html.Raw(StatusPill(r.Status))</td>
                     <td class="text-start text-nowrap">
-                        <a asp-action="Details" asp-route-id="@r.Id" class="action-btn btn-soft">تفاصيل</a>
+                        <a asp-action="Details" asp-route-id="@r.Id" class="action-btn btn-soft"><i class="bi bi-eye ms-1"></i>تفاصيل</a>
                         @if (r.Status == "Active")
                         {
-                            <form method="post" asp-action="Complete" asp-route-id="@r.Id" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="action-btn btn-soft text-success" onclick="return confirm('إكمال هذا الإيجار وإعادة السيارة للكتالوج؟')">إكمال</button>
-                            </form>
-                            <form method="post" asp-action="Cancel" asp-route-id="@r.Id" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="action-btn btn-soft text-danger" onclick="return confirm('إلغاء هذا الإيجار وإعادة السيارة للكتالوج؟')">إلغاء</button>
-                            </form>
+                            <button type="button" class="action-btn btn-soft text-success btn-rental-complete" data-bs-toggle="modal" data-bs-target="#completeRentalModal" data-rental-id="@r.Id" data-rental-name="@(r.Car is null ? "" : $"{r.Car.Brand} {r.Car.Model}")"><i class="bi bi-check-circle ms-1"></i>إكمال</button>
+                            <button type="button" class="action-btn btn-soft text-danger btn-rental-cancel" data-bs-toggle="modal" data-bs-target="#cancelRentalModal" data-rental-id="@r.Id" data-rental-name="@(r.Car is null ? "" : $"{r.Car.Brand} {r.Car.Model}")"><i class="bi bi-x-circle ms-1"></i>إلغاء</button>
                         }
                     </td>
                 </tr>
@@ -61,7 +55,7 @@
                 <tr>
                     <td colspan="8">
                         <div class="empty-state">
-                            <div class="icon">↔</div>
+                            <div class="icon"><i class="bi bi-arrow-repeat"></i></div>
                             <div class="mt-2">لا توجد إيجارات بعد — أنشئ أول حجز.</div>
                         </div>
                     </td>
@@ -69,6 +63,92 @@
             }
         </tbody>
     </table>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(function () {
+            $('.table').each(function () {
+                $(this).DataTable({
+                    language: {
+                        emptyTable: "لا توجد بيانات",
+                        info: "عرض _START_ إلى _END_ من _TOTAL_ سجل",
+                        infoEmpty: "لا توجد سجلات",
+                        infoFiltered: "(مفلتر من _MAX_ سجل)",
+                        lengthMenu: "عرض _MENU_",
+                        search: "بحث:",
+                        zeroRecords: "لا توجد نتائج مطابقة",
+                        paginate: { first: "الأول", last: "الأخير", next: "التالي", previous: "السابق" }
+                    },
+                    paging: true,
+                    ordering: true,
+                    searching: true,
+                    info: true
+                });
+            });
+
+            function bindRentalModal(modalId, formId, nameId) {
+                $('#' + modalId).on('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const id = button.getAttribute('data-rental-id');
+                    const name = button.getAttribute('data-rental-name');
+                    document.getElementById(nameId).textContent = name || 'الإيجار #' + id;
+                    document.getElementById(formId).action = '@Url.Action("__ACTION__", "Rentals")'.replace('__ACTION__', modalId.includes('complete') ? 'Complete' : 'Cancel') + '/' + id;
+                });
+            }
+            bindRentalModal('completeRentalModal', 'completeRentalForm', 'completeRentalName');
+            bindRentalModal('cancelRentalModal', 'cancelRentalForm', 'cancelRentalName');
+        });
+    </script>
+}
+
+<div class="modal fade" id="completeRentalModal" tabindex="-1" aria-labelledby="completeRentalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="completeRentalModalLabel">
+                    <i class="bi bi-check-circle-fill text-success ms-2"></i>تأكيد الإكمال
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل تريد إكمال إيجار <strong id="completeRentalName"></strong> وإعادة السيارة للكتالوج؟</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-soft" data-bs-dismiss="modal">إلغاء</button>
+                <form id="completeRentalForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">نعم، إكمال</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cancelRentalModal" tabindex="-1" aria-labelledby="cancelRentalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="cancelRentalModalLabel">
+                    <i class="bi bi-x-circle-fill text-danger ms-2"></i>تأكيد الإلغاء
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل تريد إلغاء إيجار <strong id="cancelRentalName"></strong> وإعادة السيارة للكتالوج؟</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-soft" data-bs-dismiss="modal">إلغاء</button>
+                <form id="cancelRentalForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">نعم، إلغاء</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @functions {

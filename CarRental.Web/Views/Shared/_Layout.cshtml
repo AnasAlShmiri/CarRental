@@ -10,6 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — نظام تأجير السيارات</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Head", required: false)
 </head>
@@ -19,7 +23,7 @@
         {
             <aside class="app-sidebar">
                 <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index" aria-label="العودة إلى لوحة الإحصائيات">
-                    <span class="brand-mark">▣</span>
+                    <span class="brand-mark"><i class="bi bi-car-front-fill"></i></span>
                     <span>
                         <span class="brand-name">تأجير السيارات</span>
                         <span class="brand-sub">لوحة الإدارة</span>
@@ -28,16 +32,16 @@
 
                 <nav class="sidebar-nav" aria-label="التنقل الرئيسي">
                     <a class="nav-item @(current.StartsWith("Dashboard") ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
-                        <span class="nav-icon" aria-hidden="true">◫</span><span>لوحة الإحصائيات</span>
+                        <span class="nav-icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span><span>لوحة الإحصائيات</span>
                     </a>
                     <a class="nav-item @(current.StartsWith("Cars") ? "active" : "")" asp-controller="Cars" asp-action="Index">
-                        <span class="nav-icon" aria-hidden="true">▣</span><span>السيارات</span>
+                        <span class="nav-icon" aria-hidden="true"><i class="bi bi-car-front"></i></span><span>السيارات</span>
                     </a>
                     <a class="nav-item @(current.StartsWith("Customers") ? "active" : "")" asp-controller="Customers" asp-action="Index">
-                        <span class="nav-icon" aria-hidden="true">♙</span><span>العملاء</span>
+                        <span class="nav-icon" aria-hidden="true"><i class="bi bi-people"></i></span><span>العملاء</span>
                     </a>
                     <a class="nav-item @(current.StartsWith("Rentals") ? "active" : "")" asp-controller="Rentals" asp-action="Index">
-                        <span class="nav-icon" aria-hidden="true">↔</span><span>الإيجارات</span>
+                        <span class="nav-icon" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span><span>الإيجارات</span>
                     </a>
                 </nav>
 
@@ -46,7 +50,7 @@
                     <form asp-controller="Auth" asp-action="Logout" method="post">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn-logout">
-                            <span class="nav-icon" aria-hidden="true">⇥</span><span>تسجيل الخروج</span>
+                            <span class="nav-icon" aria-hidden="true"><i class="bi bi-box-arrow-right"></i></span><span>تسجيل الخروج</span>
                         </button>
                     </form>
                 </div>

@@ -9,13 +9,13 @@
         <h2 class="page-heading mb-0">نظرة عامة</h2>
         <p class="page-description">تابع أسطول السيارات والإيجارات والإيرادات من مكان واحد.</p>
     </div>
-    <a class="btn btn-primary btn-sm px-3" asp-controller="Cars" asp-action="Create">+ إضافة سيارة</a>
+    <a class="btn btn-primary btn-sm px-3" asp-controller="Cars" asp-action="Create"><i class="bi bi-plus-lg ms-1"></i>إضافة سيارة</a>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <span class="stat-icon" aria-hidden="true">▣</span>
+            <span class="stat-icon" aria-hidden="true"><i class="bi bi-car-front"></i></span>
             <div>
                 <div class="stat-label">إجمالي السيارات</div>
                 <div class="stat-value">@Model.Cars.Total</div>
@@ -25,7 +25,7 @@
     </div>
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <span class="stat-icon success" aria-hidden="true">♙</span>
+            <span class="stat-icon success" aria-hidden="true"><i class="bi bi-people"></i></span>
             <div>
                 <div class="stat-label">العملاء</div>
                 <div class="stat-value">@Model.Customers.Total</div>
@@ -35,7 +35,7 @@
     </div>
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <span class="stat-icon warning" aria-hidden="true">↔</span>
+            <span class="stat-icon warning" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
             <div>
                 <div class="stat-label">الإيجارات</div>
                 <div class="stat-value">@Model.Rentals.Total</div>
@@ -45,7 +45,7 @@
     </div>
     <div class="col-xl-3 col-md-6">
         <div class="stat-tile">
-            <span class="stat-icon danger" aria-hidden="true">ر.س</span>
+            <span class="stat-icon danger" aria-hidden="true"><i class="bi bi-cash-stack"></i></span>
             <div>
                 <div class="stat-label">الإيراد الكلي</div>
                 <div class="stat-value">@Model.Revenue.Total.ToString("N0")</div>

@@ -9,7 +9,7 @@
         <h2 class="page-heading mb-0">إدارة السيارات</h2>
         <p class="page-description">اعرض أسطول السيارات وحدّث بياناته وحالته بسهولة.</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ إضافة سيارة</a>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg ms-1"></i>إضافة سيارة</a>
 </div>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
@@ -56,9 +56,9 @@
                     <td>@Html.Raw(StatusPill(car.Status))</td>
                     <td class="text-muted" dir="ltr">@car.CreatedAt.ToString("yyyy-MM-dd")</td>
                     <td class="text-start text-nowrap">
-                        <a asp-action="Details" asp-route-id="@car.Id" class="action-btn btn-soft">تفاصيل</a>
-                        <a asp-action="Edit" asp-route-id="@car.Id" class="action-btn btn-soft">تعديل</a>
-                        <a asp-action="Delete" asp-route-id="@car.Id" class="action-btn btn-soft text-danger">حذف</a>
+                        <a asp-action="Details" asp-route-id="@car.Id" class="action-btn btn-soft"><i class="bi bi-eye ms-1"></i>تفاصيل</a>
+                        <a asp-action="Edit" asp-route-id="@car.Id" class="action-btn btn-soft"><i class="bi bi-pencil ms-1"></i>تعديل</a>
+                        <button type="button" class="action-btn btn-soft text-danger btn-delete-car" data-bs-toggle="modal" data-bs-target="#deleteCarModal" data-car-id="@car.Id" data-car-name="@car.Model (@car.Brand)"><i class="bi bi-trash ms-1"></i>حذف</button>
                     </td>
                 </tr>
             }
@@ -67,7 +67,7 @@
                 <tr>
                     <td colspan="6">
                         <div class="empty-state">
-                            <div class="icon">▣</div>
+                            <div class="icon"><i class="bi bi-car-front"></i></div>
                             <div class="mt-2">لا توجد سيارات بعد — ابدأ بإضافة أول سيارة.</div>
                         </div>
                     </td>
@@ -75,6 +75,65 @@
             }
         </tbody>
     </table>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(function () {
+            $('.table').each(function () {
+                $(this).DataTable({
+                    language: {
+                        emptyTable: "لا توجد بيانات",
+                        info: "عرض _START_ إلى _END_ من _TOTAL_ سجل",
+                        infoEmpty: "لا توجد سجلات",
+                        infoFiltered: "(مفلتر من _MAX_ سجل)",
+                        lengthMenu: "عرض _MENU_",
+                        search: "بحث:",
+                        zeroRecords: "لا توجد نتائج مطابقة",
+                        paginate: { first: "الأول", last: "الأخير", next: "التالي", previous: "السابق" }
+                    },
+                    paging: true,
+                    ordering: true,
+                    searching: true,
+                    info: true
+                });
+            });
+
+            $('#deleteCarModal').on('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-car-id');
+                const name = button.getAttribute('data-car-name');
+                document.getElementById('deleteCarName').textContent = name;
+                document.getElementById('deleteCarForm').action = '@Url.Action("Delete", "Cars")/' + id;
+            });
+        });
+    </script>
+}
+
+<div class="modal fade" id="deleteCarModal" tabindex="-1" aria-labelledby="deleteCarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteCarModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger ms-2"></i>تأكيد الحذف
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف السيارة <strong id="deleteCarName"></strong>؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-soft" data-bs-dismiss="modal">إلغاء</button>
+                <form id="deleteCarForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">نعم، احذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @functions {
