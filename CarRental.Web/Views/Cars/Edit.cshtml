@@ -3,81 +3,102 @@
     ViewData["Title"] = $"تعديل السيارة — {Model.Brand} {Model.CarModel}";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
+        <span class="eyebrow"><i class="bi bi-car-front-fill"></i> إدارة الأسطول</span>
         <h2 class="page-heading mb-0">تعديل بيانات السيارة</h2>
         <p class="page-description">حدّث تفاصيل السيارة وصورتها وحالتها في الأسطول.</p>
     </div>
-    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى السيارات</a>
+    <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-right"></i> العودة إلى السيارات</a>
 </div>
 
-<div class="card mx-auto" style="max-width: 840px;">
-    <div class="card-body p-4">
-        <form method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="Id" />
-            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="Brand" class="form-label"></label>
-                    <input asp-for="Brand" class="form-control" />
-                    <span asp-validation-for="Brand" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="CarModel" class="form-label"></label>
-                    <input asp-for="CarModel" class="form-control" />
-                    <span asp-validation-for="CarModel" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="PricePerDayText" class="form-label"></label>
-                    <div class="input-group">
-                        <input asp-for="PricePerDayText" class="form-control" type="text" inputmode="decimal" value="@Model.PricePerDayText" dir="ltr" />
-                        <span class="input-group-text">ر.س</span>
+<div class="form-layout">
+    <section class="card form-card">
+        <div class="card-header form-card-header">
+            <div class="form-card-icon"><i class="bi bi-pencil-square"></i></div>
+            <div>
+                <h3>تحديث بيانات السيارة</h3>
+                <p>الرقم التعريفي: #@Model.Id</p>
+            </div>
+        </div>
+        <div class="card-body p-4 p-lg-5">
+            <form method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-4"></div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label asp-for="Brand" class="form-label"></label>
+                        <div class="input-with-icon"><i class="bi bi-building"></i><input asp-for="Brand" class="form-control" /></div>
+                        <span asp-validation-for="Brand" class="text-danger field-validation-error"></span>
                     </div>
-                    <span asp-validation-for="PricePerDayText" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Status" class="form-label"></label>
-                    <select asp-for="Status" class="form-select">
-                        <option value="">— اتركها كما هي —</option>
-                        <option value="Available">متاحة</option>
-                        <option value="Rented">مؤجَّرة</option>
-                        <option value="UnderMaintenance">قيد الصيانة</option>
-                    </select>
-                    <div class="form-text">اترك الحالة فارغة للإبقاء على الوضع الحالي.</div>
-                    <span asp-validation-for="Status" class="text-danger field-validation-error"></span>
-                </div>
-            </div>
-
-            <div class="form-section mt-4">
-                <div class="form-section-title">صورة السيارة</div>
-                <div class="image-upload-panel">
-                    @if (!string.IsNullOrEmpty(Model.CurrentImageUrl))
-                    {
-                        <img src="@Model.CurrentImageUrl" alt="الصورة الحالية للسيارة" class="image-preview mb-3" />
-                        <div class="form-check d-inline-flex mb-3">
-                            <input asp-for="RemoveImage" class="form-check-input" id="removeImage" />
-                            <label asp-for="RemoveImage" class="form-check-label me-2"></label>
+                    <div class="col-md-6">
+                        <label asp-for="CarModel" class="form-label"></label>
+                        <div class="input-with-icon"><i class="bi bi-car-front"></i><input asp-for="CarModel" class="form-control" /></div>
+                        <span asp-validation-for="CarModel" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="PricePerDayText" class="form-label"></label>
+                        <div class="input-group input-group-premium" dir="ltr">
+                            <input asp-for="PricePerDayText" class="form-control" type="text" inputmode="decimal" value="@Model.PricePerDayText" />
+                            <span class="input-group-text">ر.س / يوم</span>
                         </div>
-                    }
-                    else
-                    {
-                        <span class="upload-icon" aria-hidden="true">☁</span>
-                        <div class="small text-muted mb-3">لا توجد صورة حالية لهذه السيارة.</div>
-                    }
-                    <input asp-for="Image" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
-                    <div class="form-text text-start">اختيار ملف جديد يستبدل الصورة الحالية بعد التحقق من نوعه وحجمه.</div>
-                    <span asp-validation-for="Image" class="text-danger field-validation-error text-start"></span>
+                        <span asp-validation-for="PricePerDayText" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Status" class="form-label"></label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="">— اتركها كما هي —</option>
+                            <option value="Available">متاحة</option>
+                            <option value="Rented">مؤجَّرة</option>
+                            <option value="UnderMaintenance">قيد الصيانة</option>
+                        </select>
+                        <div class="form-text">اترك الحالة فارغة للإبقاء على الوضع الحالي.</div>
+                        <span asp-validation-for="Status" class="text-danger field-validation-error"></span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-action="Index" class="btn btn-light px-3">إلغاء</a>
-                <button type="submit" class="btn btn-primary px-3">حفظ التعديلات</button>
-            </div>
-        </form>
-    </div>
+                <div class="form-section mt-5">
+                    <div class="form-section-title"><i class="bi bi-image"></i> صورة السيارة</div>
+                    <div class="image-upload-panel image-upload-panel-premium">
+                        @if (!string.IsNullOrEmpty(Model.CurrentImageUrl))
+                        {
+                            <img src="@Model.CurrentImageUrl" alt="الصورة الحالية للسيارة" class="image-preview mb-3" />
+                            <div class="form-check d-inline-flex align-items-center mb-3">
+                                <input asp-for="RemoveImage" class="form-check-input" id="removeImage" />
+                                <label asp-for="RemoveImage" class="form-check-label me-2"></label>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="upload-icon"><i class="bi bi-image"></i></span>
+                            <div class="small text-muted mb-3">لا توجد صورة حالية لهذه السيارة.</div>
+                        }
+                        <input asp-for="Image" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" />
+                        <div class="form-text text-start">اختيار ملف جديد يستبدل الصورة الحالية بعد التحقق من نوعه وحجمه.</div>
+                        <span asp-validation-for="Image" class="text-danger field-validation-error text-start"></span>
+                    </div>
+                </div>
+
+                <div class="form-actions mt-5">
+                    <a asp-action="Index" class="btn btn-light"><i class="bi bi-x-lg"></i> إلغاء</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </section>
+    <aside class="form-aside">
+        <div class="form-tip-card">
+            <span class="tip-icon"><i class="bi bi-shield-check"></i></span>
+            <h3>تحديث آمن</h3>
+            <p>يمكنك تغيير الصورة أو حذفها، بينما تبقى سجلات الإيجار المرتبطة بالسيارة محفوظة.</p>
+        </div>
+        <div class="form-step-list">
+            <div><span>01</span><p>راجع البيانات</p></div>
+            <div><span>02</span><p>حدّث الحالة</p></div>
+            <div><span>03</span><p>احفظ التغييرات</p></div>
+        </div>
+    </aside>
 </div>
 
 @section Scripts {

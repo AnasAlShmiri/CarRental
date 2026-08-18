@@ -2,76 +2,56 @@
 @{
     ViewData["Title"] = "السيارات";
     var currentStatus = ViewData["CurrentStatus"] as string;
+    var totalCars = Model.Count();
+    var availableCars = Model.Count(c => c.Status == "Available");
+    var rentedCars = Model.Count(c => c.Status == "Rented");
+    var maintenanceCars = Model.Count(c => c.Status == "UnderMaintenance");
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
-        <h2 class="page-heading mb-0">إدارة السيارات</h2>
+        <span class="text-uppercase" style="color:var(--primary);font-size:.7rem;font-weight:800;letter-spacing:.04em;">إدارة الأسطول</span>
+        <h2 class="page-heading mb-0">السيارات</h2>
         <p class="page-description">اعرض أسطول السيارات وحدّث بياناته وحالته بسهولة.</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ إضافة سيارة</a>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة سيارة</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon"><i class="bi bi-car-front-fill"></i></span><div><small class="stat-label d-block">إجمالي السيارات</small><strong class="stat-value d-block" style="font-size:1.4rem">@totalCars</strong></div></div></div></div>
+    <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon success"><i class="bi bi-check2-circle"></i></span><div><small class="stat-label d-block">متاحة الآن</small><strong class="stat-value d-block" style="font-size:1.4rem">@availableCars</strong></div></div></div></div>
+    <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon warning"><i class="bi bi-key-fill"></i></span><div><small class="stat-label d-block">قيد التأجير</small><strong class="stat-value d-block" style="font-size:1.4rem">@rentedCars</strong></div></div></div></div>
+    <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon danger"><i class="bi bi-tools"></i></span><div><small class="stat-label d-block">في الصيانة</small><strong class="stat-value d-block" style="font-size:1.4rem">@maintenanceCars</strong></div></div></div></div>
 </div>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
     <div class="btn-group btn-group-sm" role="group" aria-label="تصفية حالة السيارات">
-        <a class="btn @(currentStatus is null ? "btn-primary" : "btn-soft")" asp-action="Index">الكل</a>
-        <a class="btn @(currentStatus == "Available" ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-status="Available">متاحة</a>
-        <a class="btn @(currentStatus == "Rented" ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-status="Rented">مؤجَّرة</a>
-        <a class="btn @(currentStatus == "UnderMaintenance" ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-status="UnderMaintenance">صيانة</a>
+        <a class="btn @(currentStatus is null ? "btn-primary" : "btn-soft")" asp-action="Index"><i class="bi bi-grid"></i> الكل</a>
+        <a class="btn @(currentStatus == "Available" ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-status="Available"><i class="bi bi-check-circle"></i> متاحة</a>
+        <a class="btn @(currentStatus == "Rented" ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-status="Rented"><i class="bi bi-key"></i> مؤجَّرة</a>
+        <a class="btn @(currentStatus == "UnderMaintenance" ? "btn-primary" : "btn-soft")" asp-action="Index" asp-route-status="UnderMaintenance"><i class="bi bi-wrench-adjustable"></i> صيانة</a>
     </div>
-    <span class="small text-muted">إجمالي السيارات: <strong class="text-dark">@Model.Count()</strong></span>
+    <span class="small text-muted"><i class="bi bi-car-front me-1"></i> إجمالي السيارات: <strong class="text-dark">@totalCars</strong></span>
 </div>
 
 <div class="table-responsive">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>السيارة</th>
-                <th>الماركة</th>
-                <th>السعر اليومي</th>
-                <th>الحالة</th>
-                <th>تاريخ الإضافة</th>
-                <th class="text-start">الإجراءات</th>
-            </tr>
-        </thead>
+    <table class="table align-middle">
+        <thead><tr><th>السيارة</th><th>الماركة</th><th>السعر اليومي</th><th>الحالة</th><th>تاريخ الإضافة</th><th class="text-start">الإجراءات</th></tr></thead>
         <tbody>
             @foreach (var car in Model)
             {
                 <tr>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            @if (!string.IsNullOrEmpty(car.ImageUrl))
-                            {
-                                <img src="@car.ImageUrl" alt="صورة @car.Brand @car.Model" class="avatar-thumb" />
-                            }
-                            else
-                            {
-                                <span class="avatar-initial">س</span>
-                            }
-                            <span class="fw-semibold text-dark">@car.Model</span>
-                        </div>
-                    </td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="position-relative">@if (!string.IsNullOrEmpty(car.ImageUrl)) { <img src="@car.ImageUrl" alt="صورة @car.Brand @car.Model" class="avatar-thumb" /> } else { <span class="avatar-initial"><i class="bi bi-car-front"></i></span> }</span><span><strong class="d-block">@car.Model</strong><small class="text-muted">رقم #@car.Id</small></span></div></td>
                     <td>@car.Brand</td>
-                    <td>@car.PricePerDay.ToString("N2") ر.س</td>
+                    <td><strong>@car.PricePerDay.ToString("N2")</strong> <small class="text-muted">ر.س / يوم</small></td>
                     <td>@Html.Raw(StatusPill(car.Status))</td>
                     <td class="text-muted" dir="ltr">@car.CreatedAt.ToString("yyyy-MM-dd")</td>
-                    <td class="text-start text-nowrap">
-                        <a asp-action="Details" asp-route-id="@car.Id" class="action-btn btn-soft">تفاصيل</a>
-                        <a asp-action="Edit" asp-route-id="@car.Id" class="action-btn btn-soft">تعديل</a>
-                        <a asp-action="Delete" asp-route-id="@car.Id" class="action-btn btn-soft text-danger">حذف</a>
-                    </td>
+                    <td class="text-start text-nowrap"><a asp-action="Details" asp-route-id="@car.Id" class="action-btn" title="التفاصيل"><i class="bi bi-eye"></i><span class="d-none d-xl-inline">تفاصيل</span></a> <a asp-action="Edit" asp-route-id="@car.Id" class="action-btn" title="تعديل"><i class="bi bi-pencil"></i><span class="d-none d-xl-inline">تعديل</span></a> <a asp-action="Delete" asp-route-id="@car.Id" class="action-btn text-danger" title="حذف"><i class="bi bi-trash3"></i></a></td>
                 </tr>
             }
             @if (!Model.Any())
             {
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
-                            <div class="icon">▣</div>
-                            <div class="mt-2">لا توجد سيارات بعد — ابدأ بإضافة أول سيارة.</div>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="6"><div class="empty-state"><div class="icon"><i class="bi bi-car-front"></i></div><h3>لا توجد سيارات بعد</h3><p>ابدأ بإضافة أول سيارة إلى أسطولك لتظهر هنا.</p><a asp-action="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> إضافة سيارة</a></div></td></tr>
             }
         </tbody>
     </table>

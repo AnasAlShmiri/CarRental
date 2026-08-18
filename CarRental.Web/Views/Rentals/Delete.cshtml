@@ -3,35 +3,37 @@
     ViewData["Title"] = $"حذف الإيجار #{Model.Id}";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
+        <span class="eyebrow text-danger"><i class="bi bi-shield-exclamation"></i> إجراء حساس</span>
         <h2 class="page-heading mb-0">تأكيد حذف الإيجار</h2>
         <p class="page-description">راجع ملخص الحجز قبل تنفيذ الإجراء النهائي.</p>
     </div>
-    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى الإيجارات</a>
+    <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-right"></i> العودة إلى الإيجارات</a>
 </div>
 
-<div class="card mx-auto" style="max-width: 620px;">
-    <div class="card-body p-4">
-        <div class="mb-4">
-            <h3 class="h6 text-dark mb-2">إيجار #@Model.Id</h3>
-            <div class="small text-muted">
-                @(Model.Car is null ? $"سيارة #{Model.CarId}" : $"{Model.Car.Brand} {Model.Car.Model}")
-                <span class="mx-1">—</span>
-                @(Model.Customer?.Name ?? $"عميل #{Model.CustomerId}")
-                <span class="mx-1">—</span>
-                @Model.TotalPrice.ToString("N2") ر.س
+<div class="card danger-card mx-auto" style="max-width: 700px;">
+    <div class="card-body p-4 p-lg-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="form-card-icon text-danger bg-danger-subtle border-danger-subtle"><i class="bi bi-calendar-x-fill"></i></span>
+            <div>
+                <span class="text-muted small">حجز رقم #@Model.Id</span>
+                <h3 class="h5 text-dark mb-0">ملخص الإيجار</h3>
             </div>
         </div>
-
-        <div class="alert alert-danger mb-4">
-            حذف الإيجار يُعيد السيارة إلى الكتالوج إن لم يكن عليها إيجار نشط آخر. هل أنت متأكد؟
+        <div class="summary-list mb-4">
+            <div><span>السيارة</span><strong>@(Model.Car is null ? $"سيارة #{Model.CarId}" : $"{Model.Car.Brand} {Model.Car.Model}")</strong></div>
+            <div><span>العميل</span><strong>@(Model.Customer?.Name ?? $"عميل #{Model.CustomerId}")</strong></div>
+            <div><span>الإجمالي</span><strong>@Model.TotalPrice.ToString("N2") ر.س</strong></div>
         </div>
-
-        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-flex justify-content-end gap-2">
+        <div class="alert alert-danger d-flex gap-2 align-items-start mb-4">
+            <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+            <span>حذف الإيجار يُعيد السيارة إلى الكتالوج إن لم يكن عليها إيجار نشط آخر. هل أنت متأكد؟</span>
+        </div>
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="form-actions">
             @Html.AntiForgeryToken()
-            <a asp-action="Index" class="btn btn-light">إلغاء</a>
-            <button type="submit" class="btn btn-danger">نعم، احذف الإيجار</button>
+            <a asp-action="Index" class="btn btn-light"><i class="bi bi-x-lg"></i> إلغاء</a>
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3"></i> نعم، احذف الإيجار</button>
         </form>
     </div>
 </div>

@@ -1,62 +1,47 @@
 @model IEnumerable<CarRental.Domain.Models.Customer>
 @{
     ViewData["Title"] = "العملاء";
+    var totalCustomers = Model.Count();
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
-        <h2 class="page-heading mb-0">إدارة العملاء</h2>
-        <p class="page-description">تابع بيانات العملاء المسجلين في نظام تأجير السيارات.</p>
+        <span class="text-uppercase" style="color:var(--primary);font-size:.7rem;font-weight:800;letter-spacing:.04em;">علاقات العملاء</span>
+        <h2 class="page-heading mb-0">العملاء</h2>
+        <p class="page-description">تابع بيانات العملاء المسجلين وحافظ على تجربة خدمة منظمة.</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ إضافة عميل</a>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-person-plus-fill"></i> إضافة عميل</a>
 </div>
 
-<div class="d-flex justify-content-end mb-3">
-    <span class="small text-muted">إجمالي العملاء: <strong class="text-dark">@Model.Count()</strong></span>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon success"><i class="bi bi-people-fill"></i></span><div><small class="stat-label d-block">إجمالي العملاء</small><strong class="stat-value d-block" style="font-size:1.5rem">@totalCustomers</strong><small class="stat-sub">حسابات مسجلة في النظام</small></div></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon"><i class="bi bi-person-check-fill"></i></span><div><small class="stat-label d-block">عملاء نشطون</small><strong class="stat-value d-block" style="font-size:1.5rem">@totalCustomers</strong><small class="stat-sub">جاهزون لاستئجار السيارات</small></div></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><span class="stat-icon warning"><i class="bi bi-shield-check"></i></span><div><small class="stat-label d-block">بيانات موثقة</small><strong class="stat-value d-block" style="font-size:1.5rem">100%</strong><small class="stat-sub">بيانات العملاء محفوظة بأمان</small></div></div></div></div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+    <div><h3 class="h6 mb-1" style="color:var(--ink);font-weight:800;">قائمة العملاء</h3><span class="small text-muted">عرض كل العملاء المسجلين في النظام</span></div>
+    <span class="small text-muted"><i class="bi bi-people me-1"></i> @totalCustomers عميل</span>
 </div>
 
 <div class="table-responsive">
     <table class="table">
-        <thead>
-            <tr>
-                <th>العميل</th>
-                <th>البريد الإلكتروني</th>
-                <th>الهاتف</th>
-                <th>تاريخ التسجيل</th>
-                <th class="text-start">الإجراءات</th>
-            </tr>
-        </thead>
+        <thead><tr><th>العميل</th><th>البريد الإلكتروني</th><th>الهاتف</th><th>تاريخ التسجيل</th><th class="text-start">الإجراءات</th></tr></thead>
         <tbody>
             @foreach (var c in Model)
             {
                 var initial = string.IsNullOrWhiteSpace(c.Name) ? "ع" : c.Name[..1].ToUpperInvariant();
                 <tr>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="avatar-initial">@initial</span>
-                            <span class="fw-semibold text-dark">@c.Name</span>
-                        </div>
-                    </td>
-                    <td dir="ltr" class="text-end">@c.Email</td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="avatar-initial">@initial</span><span><strong class="d-block">@c.Name</strong><small class="text-muted">عميل #@c.Id</small></span></div></td>
+                    <td dir="ltr" class="text-end"><span class="text-body">@c.Email</span></td>
                     <td dir="ltr" class="text-end">@c.Phone</td>
                     <td class="text-muted" dir="ltr">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
-                    <td class="text-start text-nowrap">
-                        <a asp-action="Details" asp-route-id="@c.Id" class="action-btn btn-soft">تفاصيل</a>
-                        <a asp-action="Edit" asp-route-id="@c.Id" class="action-btn btn-soft">تعديل</a>
-                        <a asp-action="Delete" asp-route-id="@c.Id" class="action-btn btn-soft text-danger">حذف</a>
-                    </td>
+                    <td class="text-start text-nowrap"><a asp-action="Details" asp-route-id="@c.Id" class="action-btn" title="التفاصيل"><i class="bi bi-eye"></i><span class="d-none d-xl-inline">تفاصيل</span></a> <a asp-action="Edit" asp-route-id="@c.Id" class="action-btn" title="تعديل"><i class="bi bi-pencil"></i><span class="d-none d-xl-inline">تعديل</span></a> <a asp-action="Delete" asp-route-id="@c.Id" class="action-btn text-danger" title="حذف"><i class="bi bi-trash3"></i></a></td>
                 </tr>
             }
             @if (!Model.Any())
             {
-                <tr>
-                    <td colspan="5">
-                        <div class="empty-state">
-                            <div class="icon">♙</div>
-                            <div class="mt-2">لا يوجد عملاء بعد — أضف أول عميل.</div>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="5"><div class="empty-state"><div class="icon"><i class="bi bi-people"></i></div><h3>لا يوجد عملاء بعد</h3><p>أضف أول عميل لبدء إدارة حجوزاتك بشكل منظم.</p><a asp-action="Create" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> إضافة عميل</a></div></td></tr>
             }
         </tbody>
     </table>

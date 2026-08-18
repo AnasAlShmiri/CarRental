@@ -3,56 +3,95 @@
     ViewData["Title"] = "حجز جديد";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
+        <span class="eyebrow"><i class="bi bi-calendar2-plus-fill"></i> إدارة الإيجارات</span>
         <h2 class="page-heading mb-0">إنشاء حجز إيجار</h2>
-        <p class="page-description">اختر السيارة والعميل وتاريخ الإيجار لإتمام الحجز.</p>
+        <p class="page-description">اختر السيارة والعميل وحدد المدة لإتمام الحجز.</p>
     </div>
-    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى الإيجارات</a>
+    <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-right"></i> العودة إلى الإيجارات</a>
 </div>
 
-<div class="card mx-auto" style="max-width: 840px;">
-    <div class="card-body p-4">
-        <form method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="CarId" class="form-label"></label>
-                    <select asp-for="CarId" asp-items="SelectCars()" class="form-select">
-                        <option value="">— اختر سيارة —</option>
-                    </select>
-                    <span asp-validation-for="CarId" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="CustomerId" class="form-label"></label>
-                    <select asp-for="CustomerId" asp-items="SelectCustomers()" class="form-select">
-                        <option value="">— اختر عميلاً —</option>
-                    </select>
-                    <span asp-validation-for="CustomerId" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="StartDate" class="form-label"></label>
-                    <input asp-for="StartDate" class="form-control" type="date" dir="ltr" />
-                    <span asp-validation-for="StartDate" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="EndDate" class="form-label"></label>
-                    <input asp-for="EndDate" class="form-control" type="date" dir="ltr" />
-                    <span asp-validation-for="EndDate" class="text-danger field-validation-error"></span>
-                </div>
+<div class="form-layout">
+    <section class="card form-card">
+        <div class="card-header form-card-header">
+            <div class="form-card-icon"><i class="bi bi-calendar-check-fill"></i></div>
+            <div>
+                <h3>تفاصيل الحجز</h3>
+                <p>يُحتسب السعر النهائي في الخادم وفق السعر اليومي للسيارة.</p>
             </div>
+        </div>
+        <div class="card-body p-4 p-lg-5">
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-4"></div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label asp-for="CarId" class="form-label"></label>
+                        <div class="input-with-icon">
+                            <i class="bi bi-car-front"></i>
+                            <select asp-for="CarId" asp-items="SelectCars()" class="form-select">
+                                <option value="">— اختر سيارة —</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="CarId" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="CustomerId" class="form-label"></label>
+                        <div class="input-with-icon">
+                            <i class="bi bi-person"></i>
+                            <select asp-for="CustomerId" asp-items="SelectCustomers()" class="form-select">
+                                <option value="">— اختر عميلاً —</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="CustomerId" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="StartDate" class="form-label"></label>
+                        <div class="input-with-icon" dir="ltr">
+                            <i class="bi bi-calendar-event"></i>
+                            <input asp-for="StartDate" class="form-control" type="date" />
+                        </div>
+                        <span asp-validation-for="StartDate" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EndDate" class="form-label"></label>
+                        <div class="input-with-icon" dir="ltr">
+                            <i class="bi bi-calendar-check"></i>
+                            <input asp-for="EndDate" class="form-control" type="date" />
+                        </div>
+                        <span asp-validation-for="EndDate" class="text-danger field-validation-error"></span>
+                    </div>
+                </div>
 
-            <div class="alert alert-light mt-4 mb-0" id="durationHint">
-                المدة المحتسبة: <strong id="daysCount">—</strong> يوم. يُحسب السعر النهائي في الخادم وفق السعر اليومي للسيارة.
-            </div>
+                <div class="booking-duration-card mt-5" id="durationHint">
+                    <div class="booking-duration-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <div>
+                        <span class="small text-muted d-block">المدة المحتسبة</span>
+                        <strong id="daysCount">—</strong><span class="small text-muted me-1"> يوم</span>
+                    </div>
+                    <span class="booking-duration-note">يُحسب السعر النهائي تلقائيًا</span>
+                </div>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-action="Index" class="btn btn-light px-3">إلغاء</a>
-                <button type="submit" class="btn btn-primary px-3">إنشاء الحجز</button>
-            </div>
-        </form>
-    </div>
+                <div class="form-actions mt-5">
+                    <a asp-action="Index" class="btn btn-light"><i class="bi bi-x-lg"></i> إلغاء</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> إنشاء الحجز</button>
+                </div>
+            </form>
+        </div>
+    </section>
+    <aside class="form-aside">
+        <div class="form-tip-card">
+            <span class="tip-icon"><i class="bi bi-lightning-charge"></i></span>
+            <h3>حجز سريع</h3>
+            <p>تحقق من توفر السيارة وتطابق التاريخين قبل تأكيد الحجز للعميل.</p>
+        </div>
+        <div class="form-step-list">
+            <div><span>01</span><p>اختر السيارة</p></div>
+            <div><span>02</span><p>حدد العميل</p></div>
+            <div><span>03</span><p>اضبط المدة</p></div>
+        </div>
+    </aside>
 </div>
 
 @section Scripts {
@@ -86,7 +125,6 @@
                     ((dynamic)c).Label, ((dynamic)c).Id.ToString()));
         return items;
     }
-
     List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> SelectCustomers()
     {
         var items = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();

@@ -3,42 +3,73 @@
     ViewData["Title"] = "إضافة عميل";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div>
+        <span class="eyebrow"><i class="bi bi-people-fill"></i> إدارة العملاء</span>
         <h2 class="page-heading mb-0">إضافة عميل جديد</h2>
-        <p class="page-description">سجّل بيانات العميل لاستخدامها في الحجوزات والإيجارات.</p>
+        <p class="page-description">أنشئ ملفًا واضحًا للعميل ليظهر مباشرة في الحجوزات والإيجارات.</p>
     </div>
-    <a asp-action="Index" class="btn btn-light btn-sm">← العودة إلى العملاء</a>
+    <a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-right"></i> العودة إلى العملاء</a>
 </div>
 
-<div class="card mx-auto" style="max-width: 760px;">
-    <div class="card-body p-4">
-        <form method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
-            <div class="row g-3">
-                <div class="col-12">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" placeholder="مثال: أحمد محمد" />
-                    <span asp-validation-for="Name" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" type="email" dir="ltr" placeholder="name@example.com" />
-                    <span asp-validation-for="Email" class="text-danger field-validation-error"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Phone" class="form-label"></label>
-                    <input asp-for="Phone" class="form-control" dir="ltr" placeholder="05xxxxxxxx" />
-                    <span asp-validation-for="Phone" class="text-danger field-validation-error"></span>
-                </div>
+<div class="form-layout form-layout-single">
+    <section class="card form-card">
+        <div class="card-header form-card-header">
+            <div class="form-card-icon"><i class="bi bi-person-plus-fill"></i></div>
+            <div>
+                <h3>بيانات العميل</h3>
+                <p>أدخل المعلومات الأساسية بدقة.</p>
             </div>
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-action="Index" class="btn btn-light px-3">إلغاء</a>
-                <button type="submit" class="btn btn-primary px-3">حفظ العميل</button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="card-body p-4 p-lg-5">
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-4"></div>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <label asp-for="Name" class="form-label"></label>
+                        <div class="input-with-icon">
+                            <i class="bi bi-person"></i>
+                            <input asp-for="Name" class="form-control" placeholder="مثال: أحمد محمد" autocomplete="name" />
+                        </div>
+                        <span asp-validation-for="Name" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label"></label>
+                        <div class="input-with-icon" dir="ltr">
+                            <i class="bi bi-envelope"></i>
+                            <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Phone" class="form-label"></label>
+                        <div class="input-with-icon" dir="ltr">
+                            <i class="bi bi-telephone"></i>
+                            <input asp-for="Phone" class="form-control" placeholder="05xxxxxxxx" autocomplete="tel" />
+                        </div>
+                        <span asp-validation-for="Phone" class="text-danger field-validation-error"></span>
+                    </div>
+                </div>
+                <div class="form-actions mt-5">
+                    <a asp-action="Index" class="btn btn-light"><i class="bi bi-x-lg"></i> إلغاء</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> حفظ العميل</button>
+                </div>
+            </form>
+        </div>
+    </section>
+    <aside class="form-aside">
+        <div class="form-tip-card">
+            <span class="tip-icon"><i class="bi bi-shield-check"></i></span>
+            <h3>بيانات منظمة</h3>
+            <p>تأكد من صحة البريد ورقم الجوال لتسهيل التواصل وإدارة الحجوزات.</p>
+        </div>
+        <div class="form-step-list">
+            <div><span>01</span><p>أدخل الاسم الكامل</p></div>
+            <div><span>02</span><p>أضف وسائل التواصل</p></div>
+            <div><span>03</span><p>احفظ الملف</p></div>
+        </div>
+    </aside>
 </div>
 
 @section Scripts {

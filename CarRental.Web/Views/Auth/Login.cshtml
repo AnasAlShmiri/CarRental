@@ -1,4 +1,4 @@
-@model LoginViewModel
+@model CarRental.Web.Models.LoginViewModel
 @{
     Layout = null;
     ViewData["Title"] = "تسجيل الدخول";
@@ -9,65 +9,56 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>تسجيل الدخول — نظام تأجير السيارات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="login-shell">
-        <div class="login-card">
-            <div class="login-brand">
-                <span class="brand-mark">▣</span>
-                <div>
-                    <h1 class="h5 mb-0 fw-bold text-dark">تأجير السيارات</h1>
-                    <span class="small text-muted">لوحة الإدارة</span>
-                </div>
+    <main class="login-shell">
+        <section class="login-visual d-none d-lg-flex">
+            <div class="login-visual-overlay"></div>
+            <div class="login-visual-content">
+                <span class="login-kicker"><i class="bi bi-stars"></i> إدارة أسطولك بثقة</span>
+                <h1>كل رحلة تبدأ<br /><span>بتجربة أفضل.</span></h1>
+                <p>منصة ذكية لإدارة السيارات والحجوزات والعملاء من مكان واحد، بتجربة عربية بسيطة وواضحة.</p>
+                <div class="login-trust"><span><i class="bi bi-shield-check"></i></span><div><strong>نظام آمن وموثوق</strong><small>بياناتك وعملياتك تحت السيطرة</small></div></div>
             </div>
-            <div class="text-center mb-4">
-                <h2 class="h4 text-dark mb-2">مرحباً بعودتك</h2>
-                <p class="text-muted small mb-0">سجّل الدخول للمتابعة إلى لوحة التحكم.</p>
-            </div>
-
-            @if (ViewData.ModelState.ErrorCount > 0)
-            {
-                <div class="alert alert-danger" role="alert">
-                    <div asp-validation-summary="All" class="text-danger mb-0"></div>
+        </section>
+        <section class="login-panel">
+            <div class="login-card">
+                <div class="login-brand">
+                    <span class="brand-mark"><i class="bi bi-car-front-fill"></i></span>
+                    <div><h1 class="h5 mb-0 fw-bold text-dark">تأجير السيارات</h1><span class="small text-muted">منصة الإدارة الذكية</span></div>
                 </div>
-            }
+                <div class="text-center text-lg-start mb-4">
+                    <span class="login-kicker"><i class="bi bi-hand-wave"></i> أهلاً بك مجددًا</span>
+                    <h2 class="h3 text-dark mb-2 mt-2">مرحباً بعودتك</h2>
+                    <p class="text-muted small mb-0">سجّل الدخول للوصول إلى لوحة التحكم.</p>
+                </div>
 
-            <form method="post" asp-action="Login">
-                @Html.AntiForgeryToken()
-                @if (!string.IsNullOrEmpty(ViewData["ReturnUrl"] as string))
+                @if (ViewData.ModelState.ErrorCount > 0)
                 {
-                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    <div class="alert alert-danger d-flex align-items-start gap-2" role="alert"><i class="bi bi-exclamation-circle-fill mt-1"></i><div asp-validation-summary="All" class="text-danger mb-0"></div></div>
                 }
 
-                <div class="mb-3">
-                    <label asp-for="Username" class="form-label"></label>
-                    <input asp-for="Username" class="form-control" autocomplete="username" />
-                    <span asp-validation-for="Username" class="text-danger field-validation-error"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" class="form-control" type="password" autocomplete="current-password" />
-                    <span asp-validation-for="Password" class="text-danger field-validation-error"></span>
-                </div>
-
-                <div class="form-check mb-4">
-                    <input asp-for="RememberMe" class="form-check-input" />
-                    <label asp-for="RememberMe" class="form-check-label"></label>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100">تسجيل الدخول</button>
-            </form>
-
-            <p class="text-center text-muted mt-4 mb-0 small">
-                الحساب الافتراضي للتطوير: <code>admin</code> / <code>Admin&#64;12345</code>
-            </p>
-        </div>
-    </div>
-
+                <form method="post" asp-action="Login">
+                    @Html.AntiForgeryToken()
+                    @if (!string.IsNullOrEmpty(ViewData["ReturnUrl"] as string)) { <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" /> }
+                    <div class="mb-3"><label asp-for="Username" class="form-label"><i class="bi bi-person me-1"></i> اسم المستخدم</label><input asp-for="Username" class="form-control form-control-lg" autocomplete="username" placeholder="أدخل اسم المستخدم" /><span asp-validation-for="Username" class="text-danger field-validation-error"></span></div>
+                    <div class="mb-3"><label asp-for="Password" class="form-label"><i class="bi bi-lock me-1"></i> كلمة المرور</label><div class="password-field"><input asp-for="Password" class="form-control form-control-lg" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور" /><i class="bi bi-eye password-toggle"></i></div><span asp-validation-for="Password" class="text-danger field-validation-error"></span></div>
+                    <div class="d-flex justify-content-between align-items-center mb-4"><div class="form-check"><input asp-for="RememberMe" class="form-check-input" /><label asp-for="RememberMe" class="form-check-label small"></label></div><span class="small text-muted"><i class="bi bi-shield-lock"></i> دخول آمن</span></div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100"><i class="bi bi-box-arrow-in-left"></i> تسجيل الدخول</button>
+                </form>
+                <p class="text-center text-muted mt-4 mb-0 small">الحساب الافتراضي للتطوير: <code>admin</code> / <code>Admin&#64;12345</code></p>
+            </div>
+            <div class="login-footer">© @DateTime.Now.Year نظام تأجير السيارات <span>•</span> الإصدار الإداري</div>
+        </section>
+    </main>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    <script>document.querySelector('.password-toggle')?.addEventListener('click', function(){const input=this.parentElement.querySelector('input'); input.type=input.type==='password'?'text':'password'; this.classList.toggle('bi-eye'); this.classList.toggle('bi-eye-slash');});</script>
 </body>
 </html>

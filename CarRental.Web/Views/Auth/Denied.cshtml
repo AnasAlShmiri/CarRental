@@ -3,9 +3,10 @@
     ViewData["Title"] = "غير مصرَّح";
 }
 
-<div class="empty-state py-5">
-    <div class="icon">⊘</div>
-    <h4 class="mt-3">ليس لديك صلاحية للوصول إلى هذه الصفحة</h4>
-    <p>تواصل مع مسؤول النظام إذا كنت تعتقد أن هذا خطأ.</p>
-    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-soft mt-2">العودة للوحة الإحصائيات</a>
+<div class="empty-state empty-state-premium py-5">
+    <div class="icon"><i class="bi bi-slash-circle"></i></div>
+    <span class="eyebrow text-danger mt-3">الوصول مقيّد</span>
+    <h4 class="mt-2">ليس لديك صلاحية للوصول إلى هذه الصفحة</h4>
+    <p>تواصل مع مسؤول النظام إذا كنت تعتقد أن هذا خطأ، أو عد إلى لوحة التحكم لمتابعة عملك.</p>
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary mt-2"><i class="bi bi-arrow-right"></i> العودة للوحة التحكم</a>
 </div>
