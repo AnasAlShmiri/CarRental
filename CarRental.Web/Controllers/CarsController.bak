@@ -142,7 +142,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
 
         if (await repo.HasAnyRentalsAsync(id))
         {
-            TempData["ErrorMessage"] = "لا يمكن حذف سيارة لها سجل إيجارات — غيّر حالتها إلى 'UnderMaintenance' لإخراجها من الخدمة بدلاً من الحذف";
+            TempData["ErrorMessage"] = "لا يمكن حذف سيارة لها سجل إيجارات — احتفظ بها في السجل أو عالج الإيجارات المرتبطة أولاً";
             return RedirectToAction("Index");
         }
 

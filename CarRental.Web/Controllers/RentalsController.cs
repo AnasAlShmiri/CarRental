@@ -81,13 +81,6 @@ public class RentalsController(
             return View(model);
         }
 
-        if (car.Status == CarStatus.UnderMaintenance)
-        {
-            ModelState.AddModelError(nameof(RentalViewModel.CarId),
-                "هذه السيارة قيد الصيانة ولا يمكن تأجيرها");
-            return View(model);
-        }
-
         if (await rentalRepo.HasOverlappingRentalAsync(model.CarId, model.StartDate, model.EndDate))
         {
             ModelState.AddModelError(nameof(RentalViewModel.CarId),
@@ -98,7 +91,7 @@ public class RentalsController(
         if (car.Status != CarStatus.Available)
         {
             ModelState.AddModelError(nameof(RentalViewModel.CarId),
-                $"السيارة حالياً '{car.Status}' ولا يمكن تأجيرها");
+                "السيارة غير متاحة حاليًا — اختر سيارة متاحة أخرى");
             return View(model);
         }
 
@@ -185,7 +178,8 @@ public class RentalsController(
     private async Task LoadSelectListsAsync()
     {
         var cars = (await carRepo.GetAllAsync())
-            .Select(c => new { c.Id, Label = $"{c.Brand} {c.Model} ({c.Status})" });
+            .Where(c => c.Status == CarStatus.Available)
+            .Select(c => new { c.Id, Label = $"{c.Brand} {c.Model} (متاحة)" });
         ViewData["Cars"] = cars;
 
         var customers = (await customerRepo.GetAllAsync())
