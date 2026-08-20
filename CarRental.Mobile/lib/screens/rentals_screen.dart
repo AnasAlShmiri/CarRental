@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../core/api_service.dart';
-import '../core/app_theme.dart';
-import '../core/models.dart';
 
-/// صفحة إيجاراتي — تعرض الحجوزات مع شارات حالة ملونة وفلتر.
+import '../app_scope.dart';
+import '../core/app_theme.dart';
+import '../data/models.dart';
+import '../presentation/controllers.dart';
+
 class RentalsScreen extends StatefulWidget {
   const RentalsScreen({super.key});
 
@@ -11,259 +12,159 @@ class RentalsScreen extends StatefulWidget {
   State<RentalsScreen> createState() => _RentalsScreenState();
 }
 
-class _RentalsScreenState extends State<RentalsScreen> with SingleTickerProviderStateMixin {
-  Future<List<Rental>>? _rentals;
+class _RentalsScreenState extends State<RentalsScreen> {
   String? _filter;
 
   @override
   void initState() {
     super.initState();
-    _rentals = ApiService.getRentals();
+    WidgetsBinding.instance.addPostFrameCallback((_) => AppScope.of(context).rentals.load());
   }
-
-  String _statusAr(String status) => switch (status) {
-        'Active' => 'نشط',
-        'Completed' => 'مكتمل',
-        'Cancelled' => 'ملغى',
-        _ => status,
-      };
-
-  Color _statusColor(String status) => switch (status) {
-        'Active' => AppTheme.primary,
-        'Completed' => AppTheme.success,
-        'Cancelled' => AppTheme.danger,
-        _ => Colors.grey,
-      };
-
-  void _reload() => setState(() => _rentals = ApiService.getRentals());
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('إيجاراتي', style: TextStyle(fontWeight: FontWeight.w700)),
-        actions: [
-          TextButton.icon(
-            onPressed: () => _showNewRentalSheet(context),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('حجز جديد'),
+    final controller = AppScope.of(context).rentals;
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final filtered = controller.rentals.where((item) => _filter == null || item.status == _filter).toList();
+        return RefreshIndicator(
+          onRefresh: controller.load,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('حجوزاتك', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)), SizedBox(height: 4), Text('تابع حالة إيجاراتك بسهولة', style: TextStyle(color: Colors.grey, fontSize: 12))]),
+                FloatingActionButton.small(heroTag: 'new-rental', onPressed: () => _showNewRentalSheet(), child: const Icon(Icons.add)),
+              ]),
+              const SizedBox(height: 18),
+              _filterBar(),
+              const SizedBox(height: 14),
+              if (controller.isLoading && controller.rentals.isEmpty)
+                const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator()))
+              else if (controller.errorMessage != null && controller.rentals.isEmpty)
+                _errorState(controller)
+              else if (filtered.isEmpty)
+                const Padding(padding: EdgeInsets.all(42), child: Center(child: Text('لا توجد إيجارات في هذا التصنيف')))
+              else
+                ...filtered.map(_rentalCard),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _filterBar(),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async => _reload(),
-              child: FutureBuilder<List<Rental>>(
-                future: _rentals,
-                builder: (context, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snap.hasError) {
-                    return Center(child: Text(snap.error.toString()));
-                  }
-                  final rentals = (snap.data ?? []).where((r) => _filter == null || r.status == _filter).toList();
-                  if (rentals.isEmpty) {
-                    return const Center(child: Text('لا توجد إيجارات'));
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: rentals.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, i) => _rentalCard(rentals[i]),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _filterBar() {
-    const options = [null, 'Active', 'Completed', 'Cancelled'];
-    const labels = {'All': 'الكل', 'Active': 'نشط', 'Completed': 'مكتمل', 'Cancelled': 'ملغى'};
+    const options = <String?>[null, 'Active', 'Completed', 'Cancelled'];
+    const labels = {'Active': 'نشطة', 'Completed': 'مكتملة', 'Cancelled': 'ملغاة'};
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       reverse: true,
-      child: Row(
-        children: options.map((opt) {
-          final active = _filter == opt;
-          return Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: FilterChip(
-              showCheckmark: false,
-              label: Text(labels[opt] ?? 'الكل'),
-              selected: active,
-              onSelected: (_) => setState(() => _filter = opt),
-            ),
-          );
-        }).toList(),
-      ),
+      child: Row(children: options.map((option) => Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: ChoiceChip(label: Text(option == null ? 'الكل' : labels[option]!), selected: _filter == option, onSelected: (_) => setState(() => _filter = option)),
+      )).toList()),
     );
   }
 
-  Widget _rentalCard(Rental r) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(color: _statusColor(r.status).withOpacity(.10), borderRadius: BorderRadius.circular(12)),
-                  child: Icon(Icons.receipt_long, color: _statusColor(r.status), size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(r.carName ?? '', style: const TextStyle(fontWeight: FontWeight.w700))),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: _statusColor(r.status).withOpacity(.10), borderRadius: BorderRadius.circular(20)),
-                  child: Text(_statusAr(r.status), style: TextStyle(color: _statusColor(r.status), fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text('${r.startDate.substring(0, 10)} → ${r.endDate.substring(0, 10)}', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                const Spacer(),
-                const Text('المدة: ', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                Text('${r.durationInDays} يوم', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(r.customerName ?? '', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                const Spacer(),
-                Text('${r.totalPrice.toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.primary)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _rentalCard(Rental rental) {
+    final color = _statusColor(rental.status);
+    return Card(margin: const EdgeInsets.only(bottom: 12), child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: color.withOpacity(.11), borderRadius: BorderRadius.circular(13)), child: Icon(Icons.event_note, color: color)), const SizedBox(width: 12), Expanded(child: Text(rental.carName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))), _statusPill(rental.status)]),
+      const SizedBox(height: 14),
+      const Divider(height: 1),
+      const SizedBox(height: 12),
+      Row(children: [const Icon(Icons.date_range, size: 17, color: Colors.grey), const SizedBox(width: 6), Expanded(child: Text(rental.dateRange, style: TextStyle(color: Colors.grey.shade700, fontSize: 12))), Text('${rental.durationInDays} يوم', style: const TextStyle(fontWeight: FontWeight.w700))]),
+      const SizedBox(height: 9),
+      Row(children: [Text(rental.customerName, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)), const Spacer(), Text('${rental.totalPrice.toStringAsFixed(2)} ر.س', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w800, fontSize: 15))]),
+    ])));
   }
 
-  // ── ModalBottomSheet: حجز جديد ───────────────────────────────
-  Future<void> _showNewRentalSheet(BuildContext context) async {
-    final formKey = GlobalKey<FormState>();
-    final carIdCtrl = TextEditingController();
-    final customerIdCtrl = TextEditingController();
-    DateTime? start;
-    DateTime? end;
-    bool submitting = false;
+  Color _statusColor(String status) => switch (status) { 'Active' => AppTheme.primary, 'Completed' => AppTheme.success, 'Cancelled' => AppTheme.danger, _ => Colors.grey };
 
+  Widget _statusPill(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: _statusColor(status).withOpacity(.11), borderRadius: BorderRadius.circular(20)), child: Text(switch (status) { 'Active' => 'نشطة', 'Completed' => 'مكتملة', 'Cancelled' => 'ملغاة', _ => status }, style: TextStyle(color: _statusColor(status), fontSize: 11, fontWeight: FontWeight.w700)));
+
+  Widget _errorState(RentalsController controller) => Padding(padding: const EdgeInsets.symmetric(vertical: 32), child: Column(children: [const Icon(Icons.cloud_off, size: 44, color: Colors.grey), const SizedBox(height: 10), Text(controller.errorMessage ?? 'حدث خطأ'), const SizedBox(height: 12), OutlinedButton.icon(onPressed: controller.load, icon: const Icon(Icons.refresh), label: const Text('إعادة المحاولة'))]));
+
+  Future<void> _showNewRentalSheet() async {
+    final services = AppScope.of(context);
+    final cars = services.cars.availableCars;
+    final customersFuture = services.customers.getCustomers();
+    if (cars.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا توجد سيارات متاحة حاليًا')));
+      return;
+    }
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (sheet) => StatefulBuilder(
-        builder: (sheet, setState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(sheet).viewInsets.bottom, left: 24, right: 24, top: 24),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text('حجز جديد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: carIdCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'رقم السيارة (CarId)'),
-                  validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل رقمًا صحيحًا' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: customerIdCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'رقم العميل (CustomerId)'),
-                  validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل رقمًا صحيحًا' : null,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
-                          );
-                          if (picked != null) setState(() => start = picked);
-                        },
-                        icon: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(start == null ? 'تاريخ البدء' : '${start!.toLocal().toString().substring(0, 10)}'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: start ?? DateTime.now(),
-                            firstDate: start ?? DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 730)),
-                          );
-                          if (picked != null) setState(() => end = picked);
-                        },
-                        icon: const Icon(Icons.event_available, size: 16),
-                        label: Text(end == null ? 'تاريخ الانتهاء' : '${end!.toLocal().toString().substring(0, 10)}'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                ElevatedButton(
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          if (!(formKey.currentState?.validate() ?? false) || start == null || end == null) return;
-                          setState(() => submitting = true);
-                          try {
-                            await ApiService.createRental(
-                              carId: int.parse(carIdCtrl.text),
-                              customerId: int.parse(customerIdCtrl.text),
-                              start: start!,
-                              end: end!,
-                            );
-                            if (sheet.mounted) Navigator.pop(sheet);
-                            _reload();
-                          } catch (e) {
-                            if (!sheet.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                          } finally {
-                            if (sheet.mounted) setState(() => submitting = false);
-                          }
-                        },
-                  child: submitting
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
-                      : const Text('تأكيد الحجز'),
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
-      ),
+      showDragHandle: true,
+      builder: (sheetContext) => _BookingSheet(cars: cars, customersFuture: customersFuture, onSubmit: (carId, customerId, start, end) async {
+        final success = await services.rentals.create(carId: carId, customerId: customerId, start: start, end: end);
+        if (success && sheetContext.mounted) Navigator.pop(sheetContext);
+        return success ? null : services.rentals.errorMessage;
+      }),
     );
   }
+}
+
+class _BookingSheet extends StatefulWidget {
+  const _BookingSheet({required this.cars, required this.customersFuture, required this.onSubmit});
+  final List<Car> cars;
+  final Future<List<Customer>> customersFuture;
+  final Future<String?> Function(int carId, int customerId, DateTime start, DateTime end) onSubmit;
+
+  @override
+  State<_BookingSheet> createState() => _BookingSheetState();
+}
+
+class _BookingSheetState extends State<_BookingSheet> {
+  final _formKey = GlobalKey<FormState>();
+  Customer? _customer;
+  Car? _car;
+  DateTime? _start;
+  DateTime? _end;
+  bool _submitting = false;
+
+  Future<void> _pickDate(bool start) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(context: context, initialDate: start ? (_start ?? now) : (_end ?? _start ?? now), firstDate: start ? now : (_start ?? now), lastDate: now.add(const Duration(days: 730)));
+    if (picked != null) setState(() => start ? _start = picked : _end = picked);
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false) || _start == null || _end == null) {
+      if (_start == null || _end == null) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اختر تاريخ البداية والنهاية')));
+      return;
+    }
+    if (!_end!.isAfter(_start!)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تاريخ النهاية يجب أن يكون بعد البداية')));
+      return;
+    }
+    setState(() => _submitting = true);
+    final error = await widget.onSubmit(_car!.id, _customer!.id, _start!, _end!);
+    if (!mounted) return;
+    if (error != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    setState(() => _submitting = false);
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(padding: EdgeInsets.only(left: 20, right: 20, top: 4, bottom: MediaQuery.viewInsetsOf(context).bottom + 20), child: Form(key: _formKey, child: FutureBuilder<List<Customer>>(future: widget.customersFuture, builder: (context, snapshot) {
+    if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(44), child: Center(child: CircularProgressIndicator()));
+    final customers = snapshot.data!;
+    return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Text('إنشاء حجز جديد', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 18),
+      DropdownButtonFormField<Car>(value: _car, decoration: const InputDecoration(labelText: 'السيارة المتاحة', prefixIcon: Icon(Icons.directions_car_outlined)), items: widget.cars.map((car) => DropdownMenuItem(value: car, child: Text(car.displayName))).toList(), onChanged: (value) => setState(() => _car = value), validator: (value) => value == null ? 'اختر السيارة' : null),
+      const SizedBox(height: 14),
+      DropdownButtonFormField<Customer>(value: _customer, decoration: const InputDecoration(labelText: 'العميل', prefixIcon: Icon(Icons.person_outline)), items: customers.map((customer) => DropdownMenuItem(value: customer, child: Text(customer.name))).toList(), onChanged: (value) => setState(() => _customer = value), validator: (value) => value == null ? 'اختر العميل' : null),
+      const SizedBox(height: 14),
+      Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => _pickDate(true), icon: const Icon(Icons.calendar_today, size: 17), label: Text(_start == null ? 'بداية الحجز' : _format(_start!)))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: () => _pickDate(false), icon: const Icon(Icons.event_available, size: 17), label: Text(_end == null ? 'نهاية الحجز' : _format(_end!))))]),
+      const SizedBox(height: 20),
+      ElevatedButton(onPressed: _submitting ? null : _submit, child: _submitting ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('تأكيد الحجز')),
+    ]));
+  }));
+
+  String _format(DateTime date) => '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
 }

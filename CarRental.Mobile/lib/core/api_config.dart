@@ -30,4 +30,11 @@ class ApiConfig {
   }
 
   static String get loginUrl => '$baseUrl/api/auth/login';
+
+  static String resolveUrl(String pathOrUrl) {
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+      return pathOrUrl;
+    }
+    return '$baseUrl${pathOrUrl.startsWith('/') ? '' : '/'}$pathOrUrl';
+  }
 }
