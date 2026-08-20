@@ -35,6 +35,8 @@ class _RentalsScreenState extends State<RentalsScreen> {
           LuxuryHero(eyebrow: 'YOUR JOURNEY', title: 'كل رحلة تبدأ\nبتفصيل جميل.', description: 'استعرض حجوزاتك وتابع تفاصيل رحلتك من لحظة الاختيار حتى العودة.', trailing: Container(width: 58, height: 58, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(.16), shape: BoxShape.circle), child: const Icon(Icons.route_rounded, color: AppTheme.primaryLight, size: 28))),
           const SizedBox(height: 16),
           Row(children: [Expanded(child: LuxuryMetric(label: 'كل الحجوزات', value: '${controller.rentals.length}', icon: Icons.calendar_month_rounded)), const SizedBox(width: 10), Expanded(child: LuxuryMetric(label: 'رحلات نشطة', value: '$active', icon: Icons.timelapse_rounded, accent: AppTheme.success))]),
+          const SizedBox(height: 13),
+          LuxuryQuickAction(icon: Icons.add_road_rounded, label: 'أنشئ رحلة جديدة', onTap: _showNewRentalSheet),
           const SizedBox(height: 25),
           LuxurySectionTitle(title: 'سجل الرحلات'),
           const SizedBox(height: 12),

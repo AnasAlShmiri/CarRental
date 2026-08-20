@@ -47,10 +47,10 @@ class LuxuryTopBar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.4)),
+                  AnimatedSwitcher(duration: const Duration(milliseconds: 260), transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child), child: Text(title, key: ValueKey(title), style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.4))),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
-                    Text(subtitle!, style: const TextStyle(fontSize: 11, color: AppTheme.muted, fontWeight: FontWeight.w600)),
+                    AnimatedSwitcher(duration: const Duration(milliseconds: 220), transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child), child: Text(subtitle!, key: ValueKey(subtitle), style: const TextStyle(fontSize: 11, color: AppTheme.muted, fontWeight: FontWeight.w600))),
                   ],
                 ],
               ),
@@ -161,5 +161,56 @@ class LuxuryPageBackground extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
         decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFF8F6F1), AppTheme.background])),
         child: child,
+      );
+}
+
+
+class LuxurySearchField extends StatelessWidget {
+  const LuxurySearchField({super.key, required this.controller, required this.onChanged, this.hint = 'ابحث عن سيارة أو علامة تجارية'});
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: controller.text.isEmpty ? null : IconButton(onPressed: () { controller.clear(); onChanged(''); }, icon: const Icon(Icons.close_rounded)),
+        ),
+      );
+}
+
+class LuxuryQuickAction extends StatelessWidget {
+  const LuxuryQuickAction({super.key, required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+          decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.border)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 30, height: 30, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(.12), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: AppTheme.primary, size: 16)), const SizedBox(width: 8), Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800))]),
+        ),
+      );
+}
+
+class LuxuryLoadingCard extends StatelessWidget {
+  const LuxuryLoadingCard({super.key});
+
+  @override
+  Widget build(BuildContext context) => LuxurySurface(
+        child: Row(children: [
+          Container(width: 82, height: 72, decoration: BoxDecoration(color: AppTheme.background, borderRadius: BorderRadius.circular(15)), child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))),
+          const SizedBox(width: 13),
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [SizedBox(width: 110, height: 14, child: ColoredBox(color: AppTheme.background)), SizedBox(height: 9), SizedBox(width: 170, height: 11, child: ColoredBox(color: AppTheme.background)), SizedBox(height: 9), SizedBox(width: 80, height: 11, child: ColoredBox(color: AppTheme.background))])),
+        ]),
       );
 }
