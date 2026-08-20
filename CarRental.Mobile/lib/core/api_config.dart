@@ -1,15 +1,33 @@
-/// إعدادات الاتصال بواجهة Web API الخاصة بمشروع CarRental.
+import 'package:flutter/foundation.dart';
+
+/// Central API configuration for the portable development setup.
 ///
-/// - على جهاز المحاكاة Android: استخدم 10.0.2.2 ليمرّ على شبكتك المحلية.
-/// - على الويب في بيئة التطوير: استخدم 127.0.0.1 مباشرة (شغّل الـ API على
-///   نفس الجهاز مع تفعيل CORS إن لزم).
-/// - على جهاز حقيقي: استبدل القيمة بعنوان IP جهازك في الشبكة.
+/// The API runs on port 5109. Android Emulator cannot reach the host machine
+/// through localhost, so it uses 10.0.2.2 automatically. For a physical phone,
+/// set [physicalDeviceBaseUrl] to the computer's LAN address.
 class ApiConfig {
   ApiConfig._();
 
-  /// نقطة دخول الـ API — غيّرها حسب بيئة التشغيل.
-  static const String baseUrl = 'http://127.0.0.1:5109';
+  /// Optional LAN address for a physical Android/iOS device.
+  /// Example: http://192.168.1.5:5109
+  static const String? physicalDeviceBaseUrl = null;
 
-  /// مسار تسجيل الدخول.
+  static String get baseUrl {
+    if (physicalDeviceBaseUrl != null && physicalDeviceBaseUrl!.isNotEmpty) {
+      return physicalDeviceBaseUrl!;
+    }
+
+    if (kIsWeb) {
+      return 'http://localhost:5109';
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:5109';
+      default:
+        return 'http://localhost:5109';
+    }
+  }
+
   static String get loginUrl => '$baseUrl/api/auth/login';
 }
