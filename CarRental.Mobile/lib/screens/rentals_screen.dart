@@ -4,6 +4,7 @@ import '../app_scope.dart';
 import '../core/app_theme.dart';
 import '../data/models.dart';
 import '../presentation/controllers.dart';
+import '../widgets/luxury_widgets.dart';
 
 class RentalsScreen extends StatefulWidget {
   const RentalsScreen({super.key});
@@ -24,88 +25,64 @@ class _RentalsScreenState extends State<RentalsScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = AppScope.of(context).rentals;
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        final filtered = controller.rentals.where((item) => _filter == null || item.status == _filter).toList();
-        return RefreshIndicator(
-          onRefresh: controller.load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-            children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('حجوزاتك', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)), SizedBox(height: 4), Text('تابع حالة إيجاراتك بسهولة', style: TextStyle(color: Colors.grey, fontSize: 12))]),
-                FloatingActionButton.small(heroTag: 'new-rental', onPressed: () => _showNewRentalSheet(), child: const Icon(Icons.add)),
-              ]),
-              const SizedBox(height: 18),
-              _filterBar(),
-              const SizedBox(height: 14),
-              if (controller.isLoading && controller.rentals.isEmpty)
-                const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator()))
-              else if (controller.errorMessage != null && controller.rentals.isEmpty)
-                _errorState(controller)
-              else if (filtered.isEmpty)
-                const Padding(padding: EdgeInsets.all(42), child: Center(child: Text('لا توجد إيجارات في هذا التصنيف')))
-              else
-                ...filtered.map(_rentalCard),
-            ],
-          ),
-        );
-      },
-    );
+    return AnimatedBuilder(animation: controller, builder: (context, _) {
+      final filtered = controller.rentals.where((item) => _filter == null || item.status == _filter).toList();
+      final active = controller.rentals.where((item) => item.status == 'Active').length;
+      return RefreshIndicator(
+        color: AppTheme.primary,
+        onRefresh: controller.load,
+        child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(20, 4, 20, 28), children: [
+          LuxuryHero(eyebrow: 'YOUR JOURNEY', title: 'كل رحلة تبدأ\nبتفصيل جميل.', description: 'استعرض حجوزاتك وتابع تفاصيل رحلتك من لحظة الاختيار حتى العودة.', trailing: Container(width: 58, height: 58, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(.16), shape: BoxShape.circle), child: const Icon(Icons.route_rounded, color: AppTheme.primaryLight, size: 28))),
+          const SizedBox(height: 16),
+          Row(children: [Expanded(child: LuxuryMetric(label: 'كل الحجوزات', value: '${controller.rentals.length}', icon: Icons.calendar_month_rounded)), const SizedBox(width: 10), Expanded(child: LuxuryMetric(label: 'رحلات نشطة', value: '$active', icon: Icons.timelapse_rounded, accent: AppTheme.success))]),
+          const SizedBox(height: 25),
+          LuxurySectionTitle(title: 'سجل الرحلات'),
+          const SizedBox(height: 12),
+          _filterBar(),
+          const SizedBox(height: 15),
+          if (controller.isLoading && controller.rentals.isEmpty)
+            const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator(color: AppTheme.primary)))
+          else if (controller.errorMessage != null && controller.rentals.isEmpty)
+            _errorState(controller)
+          else if (filtered.isEmpty)
+            LuxuryEmptyState(icon: Icons.event_available_rounded, title: 'لا توجد حجوزات بعد', description: 'ابدأ رحلتك الأولى باختيار سيارة من الأسطول.', action: controller.isLoading ? null : OutlinedButton.icon(onPressed: () => _showNewRentalSheet(), icon: const Icon(Icons.add_rounded), label: const Text('إنشاء حجز')))
+          else
+            ...filtered.map(_rentalCard),
+        ]),
+      );
+    });
   }
 
-  Widget _filterBar() {
-    const options = <String?>[null, 'Active', 'Completed', 'Cancelled'];
-    const labels = {'Active': 'نشطة', 'Completed': 'مكتملة', 'Cancelled': 'ملغاة'};
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      reverse: true,
-      child: Row(children: options.map((option) => Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: ChoiceChip(label: Text(option == null ? 'الكل' : labels[option]!), selected: _filter == option, onSelected: (_) => setState(() => _filter = option)),
-      )).toList()),
-    );
-  }
+  Widget _filterBar() => SingleChildScrollView(scrollDirection: Axis.horizontal, reverse: true, child: Row(children: [null, 'Active', 'Completed', 'Cancelled'].map((option) => Padding(padding: const EdgeInsets.only(left: 8), child: ChoiceChip(label: Text(option == null ? 'الكل' : _statusLabel(option)), selected: _filter == option, onSelected: (_) => setState(() => _filter = option))).toList()));
 
   Widget _rentalCard(Rental rental) {
     final color = _statusColor(rental.status);
-    return Card(margin: const EdgeInsets.only(bottom: 12), child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: color.withOpacity(.11), borderRadius: BorderRadius.circular(13)), child: Icon(Icons.event_note, color: color)), const SizedBox(width: 12), Expanded(child: Text(rental.carName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))), _statusPill(rental.status)]),
+    return Container(margin: const EdgeInsets.only(bottom: 13), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(AppTheme.radiusMedium), border: Border.all(color: AppTheme.border), boxShadow: const [BoxShadow(color: Color(0x0809111F), blurRadius: 18, offset: Offset(0, 7))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [Container(width: 45, height: 45, decoration: BoxDecoration(gradient: AppTheme.luxuryGradient, borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.directions_car_filled_rounded, color: AppTheme.primaryLight, size: 21)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(rental.carName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)), const SizedBox(height: 3), Text(rental.customerName, style: const TextStyle(color: AppTheme.muted, fontSize: 11, fontWeight: FontWeight.w600))])), LuxuryStatusChip(label: _statusLabel(rental.status), color: color)]),
+      const SizedBox(height: 15),
+      Container(padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11), decoration: BoxDecoration(color: AppTheme.background, borderRadius: BorderRadius.circular(14)), child: Row(children: [const Icon(Icons.date_range_rounded, size: 18, color: AppTheme.primary), const SizedBox(width: 8), Expanded(child: Text(rental.dateRange, style: const TextStyle(fontSize: 11, color: AppTheme.ink, fontWeight: FontWeight.w700))), Text('${rental.durationInDays} يوم', style: const TextStyle(color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w900))])),
       const SizedBox(height: 14),
-      const Divider(height: 1),
-      const SizedBox(height: 12),
-      Row(children: [const Icon(Icons.date_range, size: 17, color: Colors.grey), const SizedBox(width: 6), Expanded(child: Text(rental.dateRange, style: TextStyle(color: Colors.grey.shade700, fontSize: 12))), Text('${rental.durationInDays} يوم', style: const TextStyle(fontWeight: FontWeight.w700))]),
-      const SizedBox(height: 9),
-      Row(children: [Text(rental.customerName, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)), const Spacer(), Text('${rental.totalPrice.toStringAsFixed(2)} ر.س', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w800, fontSize: 15))]),
-    ])));
+      Row(children: [const Text('القيمة الإجمالية', style: TextStyle(color: AppTheme.muted, fontSize: 11)), const Spacer(), Text('${rental.totalPrice.toStringAsFixed(2)} ر.س', style: const TextStyle(color: AppTheme.midnight, fontSize: 16, fontWeight: FontWeight.w900))]),
+    ]));
   }
 
-  Color _statusColor(String status) => switch (status) { 'Active' => AppTheme.primary, 'Completed' => AppTheme.success, 'Cancelled' => AppTheme.danger, _ => Colors.grey };
+  String _statusLabel(String status) => switch (status) { 'Active' => 'نشطة', 'Completed' => 'مكتملة', 'Cancelled' => 'ملغاة', _ => status };
+  Color _statusColor(String status) => switch (status) { 'Active' => AppTheme.success, 'Completed' => AppTheme.primary, 'Cancelled' => AppTheme.danger, _ => AppTheme.muted };
 
-  Widget _statusPill(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: _statusColor(status).withOpacity(.11), borderRadius: BorderRadius.circular(20)), child: Text(switch (status) { 'Active' => 'نشطة', 'Completed' => 'مكتملة', 'Cancelled' => 'ملغاة', _ => status }, style: TextStyle(color: _statusColor(status), fontSize: 11, fontWeight: FontWeight.w700)));
-
-  Widget _errorState(RentalsController controller) => Padding(padding: const EdgeInsets.symmetric(vertical: 32), child: Column(children: [const Icon(Icons.cloud_off, size: 44, color: Colors.grey), const SizedBox(height: 10), Text(controller.errorMessage ?? 'حدث خطأ'), const SizedBox(height: 12), OutlinedButton.icon(onPressed: controller.load, icon: const Icon(Icons.refresh), label: const Text('إعادة المحاولة'))]));
+  Widget _errorState(RentalsController controller) => LuxuryEmptyState(icon: Icons.cloud_off_rounded, title: 'تعذر تحميل الرحلات', description: controller.errorMessage ?? 'تحقق من الاتصال ثم أعد المحاولة.', action: OutlinedButton.icon(onPressed: controller.load, icon: const Icon(Icons.refresh_rounded), label: const Text('إعادة المحاولة')));
 
   Future<void> _showNewRentalSheet() async {
     final services = AppScope.of(context);
     final cars = services.cars.availableCars;
-    final customersFuture = services.customers.getCustomers();
     if (cars.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا توجد سيارات متاحة حاليًا')));
       return;
     }
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => _BookingSheet(cars: cars, customersFuture: customersFuture, onSubmit: (carId, customerId, start, end) async {
-        final success = await services.rentals.create(carId: carId, customerId: customerId, start: start, end: end);
-        if (success && sheetContext.mounted) Navigator.pop(sheetContext);
-        return success ? null : services.rentals.errorMessage;
-      }),
-    );
+    await showModalBottomSheet<void>(context: context, isScrollControlled: true, showDragHandle: true, builder: (sheetContext) => _BookingSheet(cars: cars, customersFuture: services.customers.getCustomers(), onSubmit: (carId, customerId, start, end) async {
+      final success = await services.rentals.create(carId: carId, customerId: customerId, start: start, end: end);
+      if (success && sheetContext.mounted) Navigator.pop(sheetContext);
+      return success ? null : services.rentals.errorMessage;
+    }));
   }
 }
 
@@ -134,8 +111,9 @@ class _BookingSheetState extends State<_BookingSheet> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false) || _start == null || _end == null) {
-      if (_start == null || _end == null) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اختر تاريخ البداية والنهاية')));
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_start == null || _end == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اختر تاريخ البداية والنهاية')));
       return;
     }
     if (!_end!.isAfter(_start!)) {
@@ -150,21 +128,25 @@ class _BookingSheetState extends State<_BookingSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(padding: EdgeInsets.only(left: 20, right: 20, top: 4, bottom: MediaQuery.viewInsetsOf(context).bottom + 20), child: Form(key: _formKey, child: FutureBuilder<List<Customer>>(future: widget.customersFuture, builder: (context, snapshot) {
-    if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(44), child: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) => Padding(padding: EdgeInsets.only(left: 20, right: 20, top: 5, bottom: MediaQuery.viewInsetsOf(context).bottom + 20), child: FutureBuilder<List<Customer>>(future: widget.customersFuture, builder: (context, snapshot) {
+    if (snapshot.hasError) return Padding(padding: const EdgeInsets.all(32), child: Text('تعذر تحميل العملاء: ${snapshot.error}'));
+    if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(44), child: Center(child: CircularProgressIndicator(color: AppTheme.primary)));
     final customers = snapshot.data!;
-    return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const Text('إنشاء حجز جديد', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 18),
-      DropdownButtonFormField<Car>(value: _car, decoration: const InputDecoration(labelText: 'السيارة المتاحة', prefixIcon: Icon(Icons.directions_car_outlined)), items: widget.cars.map((car) => DropdownMenuItem(value: car, child: Text(car.displayName))).toList(), onChanged: (value) => setState(() => _car = value), validator: (value) => value == null ? 'اختر السيارة' : null),
-      const SizedBox(height: 14),
-      DropdownButtonFormField<Customer>(value: _customer, decoration: const InputDecoration(labelText: 'العميل', prefixIcon: Icon(Icons.person_outline)), items: customers.map((customer) => DropdownMenuItem(value: customer, child: Text(customer.name))).toList(), onChanged: (value) => setState(() => _customer = value), validator: (value) => value == null ? 'اختر العميل' : null),
-      const SizedBox(height: 14),
-      Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => _pickDate(true), icon: const Icon(Icons.calendar_today, size: 17), label: Text(_start == null ? 'بداية الحجز' : _format(_start!)))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: () => _pickDate(false), icon: const Icon(Icons.event_available, size: 17), label: Text(_end == null ? 'نهاية الحجز' : _format(_end!))))]),
+    return Form(key: _formKey, child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Text('صمّم رحلتك القادمة', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 5),
+      const Text('تفاصيل بسيطة، وتجربة تقودك بثقة.', style: TextStyle(color: AppTheme.muted, fontSize: 12)),
       const SizedBox(height: 20),
-      ElevatedButton(onPressed: _submitting ? null : _submit, child: _submitting ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('تأكيد الحجز')),
+      DropdownButtonFormField<Car>(value: _car, decoration: const InputDecoration(labelText: 'السيارة المتاحة', prefixIcon: Icon(Icons.directions_car_outlined)), items: widget.cars.map((car) => DropdownMenuItem(value: car, child: Text(car.displayName))).toList(), onChanged: (value) => setState(() => _car = value), validator: (value) => value == null ? 'اختر السيارة' : null),
+      const SizedBox(height: 13),
+      DropdownButtonFormField<Customer>(value: _customer, decoration: const InputDecoration(labelText: 'العميل', prefixIcon: Icon(Icons.person_outline)), items: customers.map((customer) => DropdownMenuItem(value: customer, child: Text(customer.name))).toList(), onChanged: (value) => setState(() => _customer = value), validator: (value) => value == null ? 'اختر العميل' : null),
+      const SizedBox(height: 15),
+      Row(children: [Expanded(child: _dateButton(label: _start == null ? 'بداية الرحلة' : _format(_start!), icon: Icons.login_rounded, onTap: () => _pickDate(true))), const SizedBox(width: 10), Expanded(child: _dateButton(label: _end == null ? 'نهاية الرحلة' : _format(_end!), icon: Icons.logout_rounded, onTap: () => _pickDate(false)))]),
+      const SizedBox(height: 20),
+      ElevatedButton.icon(onPressed: _submitting ? null : _submit, icon: _submitting ? const SizedBox(height: 19, width: 19, child: CircularProgressIndicator(color: AppTheme.primaryLight, strokeWidth: 2)) : const Icon(Icons.check_rounded), label: Text(_submitting ? 'جارٍ تأكيد الرحلة...' : 'تأكيد الحجز')),
     ]));
   }));
 
+  Widget _dateButton({required String label, required IconData icon, required VoidCallback onTap}) => OutlinedButton.icon(onPressed: onTap, icon: Icon(icon, size: 17), label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis));
   String _format(DateTime date) => '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
 }

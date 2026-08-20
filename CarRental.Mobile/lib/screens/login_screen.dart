@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../app_scope.dart';
 import '../core/app_theme.dart';
+import '../widgets/luxury_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,17 +27,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final auth = AppScope.of(context).auth;
-    final success = await auth.login(
-      _usernameController.text.trim(),
-      _passwordController.text,
-    );
+    final success = await auth.login(_usernameController.text.trim(), _passwordController.text);
     if (!mounted) return;
     if (success) {
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage!)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
     }
   }
 
@@ -45,99 +40,30 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = AppScope.of(context).auth;
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 84,
-                        height: 84,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(.10),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const Icon(Icons.car_rental, size: 44, color: AppTheme.primary),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'مرحبًا بك في كار رنتال',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 7),
-                    Text(
-                      'سجّل الدخول لإدارة السيارات والحجوزات من هاتفك',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                    ),
-                    const SizedBox(height: 32),
-                    TextFormField(
-                      controller: _usernameController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم المستخدم',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      validator: (value) => value == null || value.trim().isEmpty
-                          ? 'اسم المستخدم مطلوب'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        ),
-                      ),
-                      validator: (value) => value == null || value.length < 6
-                          ? 'كلمة المرور يجب ألا تقل عن 6 أحرف'
-                          : null,
-                    ),
-                    const SizedBox(height: 24),
-                    AnimatedBuilder(
-                      animation: auth,
-                      builder: (context, _) => ElevatedButton(
-                        onPressed: auth.isLoading ? null : _submit,
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                              )
-                            : const Text('تسجيل الدخول'),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'حساب التطوير: admin / Admin@12345',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: AppTheme.midnight,
+      body: SafeArea(child: SingleChildScrollView(child: Padding(padding: const EdgeInsets.fromLTRB(22, 28, 22, 28), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _brandMark(),
+        const SizedBox(height: 52),
+        const Text('مرحبًا بك في\nعالم القيادة الراقية.', style: TextStyle(color: Colors.white, fontSize: 31, height: 1.16, fontWeight: FontWeight.w900, letterSpacing: -.5)),
+        const SizedBox(height: 12),
+        const Text('سجّل دخولك واستمتع بإدارة أسطولك ورحلاتك بتجربة مصممة بعناية.', style: TextStyle(color: Color(0xA8FFFFFF), height: 1.7, fontSize: 13)),
+        const SizedBox(height: 35),
+        Container(padding: const EdgeInsets.fromLTRB(18, 20, 18, 20), decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(27)), child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Text('تسجيل الدخول', style: TextStyle(color: AppTheme.ink, fontSize: 20, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 5),
+          const Text('أدخل بيانات حسابك للمتابعة', style: TextStyle(color: AppTheme.muted, fontSize: 11)),
+          const SizedBox(height: 22),
+          TextFormField(controller: _usernameController, textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'اسم المستخدم', prefixIcon: Icon(Icons.person_outline_rounded)), validator: (value) => value == null || value.trim().isEmpty ? 'اسم المستخدم مطلوب' : null),
+          const SizedBox(height: 13),
+          TextFormField(controller: _passwordController, obscureText: _obscurePassword, textInputAction: TextInputAction.done, onFieldSubmitted: (_) => _submit(), decoration: InputDecoration(labelText: 'كلمة المرور', prefixIcon: const Icon(Icons.lock_outline_rounded), suffixIcon: IconButton(onPressed: () => setState(() => _obscurePassword = !_obscurePassword), icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined))), validator: (value) => value == null || value.length < 6 ? 'كلمة المرور يجب ألا تقل عن 6 أحرف' : null),
+          const SizedBox(height: 21),
+          AnimatedBuilder(animation: auth, builder: (context, _) => ElevatedButton.icon(onPressed: auth.isLoading ? null : _submit, icon: auth.isLoading ? const SizedBox(height: 19, width: 19, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryLight)) : const Icon(Icons.arrow_back_rounded), label: Text(auth.isLoading ? 'جارٍ التحقق...' : 'دخول آمن'))),
+        ]))),
+        const SizedBox(height: 22),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.verified_user_outlined, color: AppTheme.primaryLight, size: 16), const SizedBox(width: 7), Text('اتصال آمن ومشفّر', style: TextStyle(color: Colors.white.withOpacity(.65), fontSize: 11, fontWeight: FontWeight.w600))]),
+      ]))),
     );
   }
+
+  Widget _brandMark() => Row(children: [Container(width: 50, height: 50, decoration: BoxDecoration(gradient: AppTheme.goldGradient, borderRadius: BorderRadius.circular(17)), child: const Icon(Icons.directions_car_filled_rounded, color: AppTheme.midnight, size: 26)), const SizedBox(width: 12), const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('CAR RENTAL', style: TextStyle(color: AppTheme.primaryLight, fontSize: 15, letterSpacing: 2.1, fontWeight: FontWeight.w900)), SizedBox(height: 2), Text('Luxury mobility', style: TextStyle(color: Color(0x88FFFFFF), fontSize: 10, letterSpacing: .8))])]);
 }

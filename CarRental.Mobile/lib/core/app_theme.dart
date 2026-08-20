@@ -1,65 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// سمة التطبيق — نفس الهوية البصرية للوحة التحكم (أزرق #1A73E8 وخلفية فاتحة).
+/// هوية CarRental الفاخرة: Midnight Navy + Champagne Gold + Ivory.
 class AppTheme {
   AppTheme._();
 
-  static const Color primary = Color(0xFF1A73E8);
-  static const Color background = Color(0xFFF5F7FA);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color success = Color(0xFF006E2C);
-  static const Color warning = Color(0xFF8A5A00);
-  static const Color danger = Color(0xFFBA1A1A);
+  static const midnight = Color(0xFF09111F);
+  static const navy = Color(0xFF111D31);
+  static const navySoft = Color(0xFF17243A);
+  static const primary = Color(0xFFC69A5B);
+  static const primaryLight = Color(0xFFE5C58E);
+  static const background = Color(0xFFF7F5F0);
+  static const surface = Color(0xFFFFFEFB);
+  static const ink = Color(0xFF172033);
+  static const muted = Color(0xFF7C8491);
+  static const border = Color(0xFFE9E4DA);
+  static const success = Color(0xFF3F8F75);
+  static const warning = Color(0xFFB37A3E);
+  static const danger = Color(0xFFB85C5C);
 
-  static ThemeData light = ThemeData(
-    useMaterial3: true,
-    colorSchemeSeed: primary,
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: background,
-    fontFamily: GoogleFonts.tajawal().fontFamily,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: surface,
-      foregroundColor: Color(0xFF111827),
-      elevation: 0,
-      centerTitle: true,
-    ),
-    cardTheme: const CardThemeData(
-      color: surface,
-      elevation: 1,
-      margin: EdgeInsets.zero,
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: const Color(0xFFF9FAFB),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+  static const radiusLarge = 26.0;
+  static const radiusMedium = 18.0;
+
+  static ThemeData get light {
+    final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
+    final textTheme = GoogleFonts.tajawalTextTheme(base.textTheme).apply(
+      bodyColor: ink,
+      displayColor: ink,
+    );
+    return base.copyWith(
+      scaffoldBackgroundColor: background,
+      colorScheme: const ColorScheme.light(
+        primary: primary,
+        onPrimary: midnight,
+        secondary: primaryLight,
+        onSecondary: midnight,
+        surface: surface,
+        onSurface: ink,
+        error: danger,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      textTheme: textTheme,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        foregroundColor: ink,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: primary, width: 1.5),
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
+          side: const BorderSide(color: border),
+        ),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFFBFAF7),
+        labelStyle: const TextStyle(color: muted, fontWeight: FontWeight.w600),
+        hintStyle: const TextStyle(color: Color(0xFFA8ADB5)),
+        prefixIconColor: muted,
+        suffixIconColor: muted,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primary, width: 1.4)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: danger)),
       ),
-    ),
-    navigationBarTheme: const NavigationBarThemeData(
-      indicatorColor: Color(0xFFE8F1FE),
-      labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: midnight,
+          foregroundColor: primaryLight,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 54),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
-    ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: midnight,
+          minimumSize: const Size(double.infinity, 52),
+          side: const BorderSide(color: border),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: midnight,
+        indicatorColor: primary,
+        elevation: 0,
+        height: 76,
+        labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+        iconTheme: const WidgetStatePropertyAll(IconThemeData(color: primaryLight)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(backgroundColor: surface, modalBackgroundColor: surface, showDragHandle: true),
+      dividerTheme: const DividerThemeData(color: border, thickness: 1),
+    );
+  }
+
+  static const luxuryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [midnight, navy, navySoft],
+  );
+
+  static const goldGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryLight, primary, Color(0xFFA8783E)],
   );
 }
