@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_scope.dart';
+import '../core/api_config.dart';
 import '../core/app_theme.dart';
 import '../data/models.dart';
 import '../presentation/controllers.dart';
@@ -89,7 +90,7 @@ class _CarsScreenState extends State<CarsScreen> {
         ),
       );
 
-  Widget _carImage(Car car) => DecoratedBox(decoration: const BoxDecoration(gradient: AppTheme.luxuryGradient), child: car.imageUrl == null || car.imageUrl!.isEmpty ? const Center(child: Icon(Icons.directions_car_filled_rounded, color: AppTheme.primaryLight, size: 70)) : Image.network(car.imageUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.directions_car_filled_rounded, color: AppTheme.primaryLight, size: 70))));
+  Widget _carImage(Car car) => DecoratedBox(decoration: const BoxDecoration(gradient: AppTheme.luxuryGradient), child: car.imageUrl == null || car.imageUrl!.isEmpty ? const Center(child: Icon(Icons.directions_car_filled_rounded, color: AppTheme.primaryLight, size: 70)) : Image.network(ApiConfig.resolveUrl(car.imageUrl!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.directions_car_filled_rounded, color: AppTheme.primaryLight, size: 70))));
 
   Widget _errorState(CarsController controller) => LuxuryEmptyState(icon: Icons.cloud_off_rounded, title: 'تعذر تحميل الأسطول', description: controller.errorMessage ?? 'تحقق من اتصال API ثم حاول مرة أخرى.', action: OutlinedButton.icon(onPressed: controller.load, icon: const Icon(Icons.refresh_rounded), label: const Text('إعادة المحاولة')));
 

@@ -33,7 +33,7 @@ class ApiClient {
 
   Future<dynamic> get(String path, {bool authenticated = false}) async {
     final response = await _client.get(
-      Uri.parse('${ApiConfig.baseUrl}$path'),
+      Uri.parse(ApiConfig.resolveUrl(path)),
       headers: await _headers(authenticated: authenticated),
     );
     return _decode(response);
@@ -45,7 +45,7 @@ class ApiClient {
     bool authenticated = false,
   }) async {
     final response = await _client.post(
-      Uri.parse('${ApiConfig.baseUrl}$path'),
+      Uri.parse(ApiConfig.resolveUrl(path)),
       headers: await _headers(authenticated: authenticated),
       body: body == null ? null : jsonEncode(body),
     );

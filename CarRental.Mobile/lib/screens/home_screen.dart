@@ -24,6 +24,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void _select(int index) {
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) Navigator.pop(context);
     setState(() => _selectedIndex = index);
+    final services = AppScope.of(context);
+    if (index == 0) {
+      services.cars.load();
+    } else if (index == 1) {
+      services.rentals.load();
+    }
   }
 
   Future<void> _logout() async {
@@ -47,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+        onDestinationSelected: _select,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.directions_car_outlined), selectedIcon: Icon(Icons.directions_car_rounded), label: 'الأسطول'),
           NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month_rounded), label: 'الحجوزات'),
