@@ -42,9 +42,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (success) {
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
     }
   }
 
@@ -52,11 +52,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final auth = AppScope.of(context).auth;
     return Scaffold(
-      backgroundColor: AppTheme.midnight,
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.surface,
+        foregroundColor: AppTheme.ink,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         title: const Text('إنشاء حساب عميل'),
       ),
       body: SafeArea(
@@ -66,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
             decoration: BoxDecoration(
               color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(27),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
             ),
             child: Form(
               key: _formKey,
@@ -112,10 +113,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       final email = value?.trim() ?? '';
-                      final valid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                          .hasMatch(email);
+                      final valid = RegExp(
+                        r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                      ).hasMatch(email);
                       if (!valid) return 'أدخل بريدًا إلكترونيًا صحيحًا';
-                      if (email.length > 150) return 'البريد الإلكتروني طويل جدًا';
+                      if (email.length > 150) {
+                        return 'البريد الإلكتروني طويل جدًا';
+                      }
                       return null;
                     },
                   ),
@@ -189,18 +193,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               width: 19,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppTheme.primaryLight,
+                                color: AppTheme.primary,
                               ),
                             )
                           : const Icon(Icons.rocket_launch_outlined),
                       label: Text(
-                        auth.isLoading ? 'جارٍ إنشاء الحساب...' : 'إنشاء الحساب',
+                        auth.isLoading
+                            ? 'جارٍ إنشاء الحساب...'
+                            : 'إنشاء الحساب',
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
                   TextButton(
-                    onPressed: auth.isLoading ? null : () => Navigator.pop(context),
+                    onPressed: auth.isLoading
+                        ? null
+                        : () => Navigator.pop(context),
                     child: const Text('لديك حساب؟ تسجيل الدخول'),
                   ),
                 ],

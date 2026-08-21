@@ -24,16 +24,17 @@ class AuthSession {
   bool get isCustomer => role.toLowerCase() == 'customer';
 
   factory AuthSession.fromJson(Map<String, dynamic> json) => AuthSession(
-        token: json['token']?.toString() ?? '',
-        expiresAtUtc: DateTime.tryParse(json['expiresAtUtc']?.toString() ?? '') ??
-            DateTime.now().toUtc().add(const Duration(hours: 1)),
-        username: json['username']?.toString() ?? json['email']?.toString() ?? '',
-        role: json['role']?.toString() ?? '',
-        customerId: json['customerId'] == null ? null : _asInt(json['customerId']),
-        name: json['name']?.toString(),
-        email: json['email']?.toString(),
-        phone: json['phone']?.toString(),
-      );
+    token: json['token']?.toString() ?? '',
+    expiresAtUtc:
+        DateTime.tryParse(json['expiresAtUtc']?.toString() ?? '') ??
+        DateTime.now().toUtc().add(const Duration(hours: 1)),
+    username: json['username']?.toString() ?? json['email']?.toString() ?? '',
+    role: json['role']?.toString() ?? '',
+    customerId: json['customerId'] == null ? null : _asInt(json['customerId']),
+    name: json['name']?.toString(),
+    email: json['email']?.toString(),
+    phone: json['phone']?.toString(),
+  );
 }
 
 class Car {
@@ -59,14 +60,14 @@ class Car {
   bool get isAvailable => status == 'Available';
 
   factory Car.fromJson(Map<String, dynamic> json) => Car(
-        id: _asInt(json['id']),
-        brand: json['brand']?.toString() ?? '',
-        model: json['model']?.toString() ?? '',
-        pricePerDay: _asDouble(json['pricePerDay']),
-        status: json['status']?.toString() ?? '',
-        imageUrl: json['imageUrl']?.toString(),
-        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
-      );
+    id: _asInt(json['id']),
+    brand: json['brand']?.toString() ?? '',
+    model: json['model']?.toString() ?? '',
+    pricePerDay: _asDouble(json['pricePerDay']),
+    status: json['status']?.toString() ?? '',
+    imageUrl: json['imageUrl']?.toString(),
+    createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+  );
 }
 
 class Customer {
@@ -85,12 +86,12 @@ class Customer {
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
-        id: _asInt(json['id']),
-        name: json['name']?.toString() ?? '',
-        email: json['email']?.toString() ?? '',
-        phone: json['phone']?.toString() ?? '',
-        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
-      );
+    id: _asInt(json['id']),
+    name: json['name']?.toString() ?? '',
+    email: json['email']?.toString() ?? '',
+    phone: json['phone']?.toString() ?? '',
+    createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+  );
 }
 
 class Rental {
@@ -129,24 +130,25 @@ class Rental {
   }
 
   factory Rental.fromJson(Map<String, dynamic> json) => Rental(
-        id: _asInt(json['id']),
-        carId: _asInt(json['carId']),
-        customerId: _asInt(json['customerId']),
-        startDate: DateTime.tryParse(json['startDate']?.toString() ?? ''),
-        endDate: DateTime.tryParse(json['endDate']?.toString() ?? ''),
-        durationInDays: _asInt(json['durationInDays']),
-        totalPrice: _asDouble(json['totalPrice']),
-        status: json['status']?.toString() ?? '',
-        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
-        car: json['car'] is Map
-            ? Car.fromJson(Map<String, dynamic>.from(json['car'] as Map))
-            : null,
-        customer: json['customer'] is Map
-            ? Customer.fromJson(Map<String, dynamic>.from(json['customer'] as Map))
-            : null,
-      );
+    id: _asInt(json['id']),
+    carId: _asInt(json['carId']),
+    customerId: _asInt(json['customerId']),
+    startDate: DateTime.tryParse(json['startDate']?.toString() ?? ''),
+    endDate: DateTime.tryParse(json['endDate']?.toString() ?? ''),
+    durationInDays: _asInt(json['durationInDays']),
+    totalPrice: _asDouble(json['totalPrice']),
+    status: json['status']?.toString() ?? '',
+    createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+    car: json['car'] is Map
+        ? Car.fromJson(Map<String, dynamic>.from(json['car'] as Map))
+        : null,
+    customer: json['customer'] is Map
+        ? Customer.fromJson(Map<String, dynamic>.from(json['customer'] as Map))
+        : null,
+  );
 }
 
 int _asInt(Object? value) => value is int ? value : int.tryParse('$value') ?? 0;
 
-double _asDouble(Object? value) => value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
+double _asDouble(Object? value) =>
+    value is num ? value.toDouble() : double.tryParse('$value') ?? 0;

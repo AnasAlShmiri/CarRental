@@ -12,20 +12,23 @@ class AuthRepository {
     required String phone,
     required String password,
   }) async {
-    final data = await _api.post('/api/customer-auth/register', body: {
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'password': password,
-    });
+    final data = await _api.post(
+      '/api/customer-auth/register',
+      body: {
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'password': password,
+      },
+    );
     return _saveSession(data);
   }
 
   Future<AuthSession> login(String email, String password) async {
-    final data = await _api.post('/api/customer-auth/login', body: {
-      'email': email,
-      'password': password,
-    });
+    final data = await _api.post(
+      '/api/customer-auth/login',
+      body: {'email': email, 'password': password},
+    );
     return _saveSession(data);
   }
 
@@ -73,6 +76,18 @@ class CustomerRepository {
     final data = await _api.get('/api/customer-auth/me', authenticated: true);
     return Customer.fromJson(Map<String, dynamic>.from(data as Map));
   }
+
+  Future<Customer> updateMyProfile({
+    required String name,
+    required String phone,
+  }) async {
+    final data = await _api.put(
+      '/api/customer-auth/me',
+      authenticated: true,
+      body: {'name': name.trim(), 'phone': phone.trim()},
+    );
+    return Customer.fromJson(Map<String, dynamic>.from(data as Map));
+  }
 }
 
 class RentalRepository {
@@ -91,16 +106,23 @@ class RentalRepository {
     required DateTime start,
     required DateTime end,
   }) async {
-    final data = await _api.post('/api/customer/rentals', authenticated: true, body: {
-      'carId': carId,
-      'startDate': start.toUtc().toIso8601String(),
-      'endDate': end.toUtc().toIso8601String(),
-    });
+    final data = await _api.post(
+      '/api/customer/rentals',
+      authenticated: true,
+      body: {
+        'carId': carId,
+        'startDate': start.toUtc().toIso8601String(),
+        'endDate': end.toUtc().toIso8601String(),
+      },
+    );
     return Rental.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   Future<Rental> cancelRental(int id) async {
-    final data = await _api.post('/api/customer/rentals/$id/cancel', authenticated: true);
+    final data = await _api.post(
+      '/api/customer/rentals/$id/cancel',
+      authenticated: true,
+    );
     return Rental.fromJson(Map<String, dynamic>.from(data as Map));
   }
 }

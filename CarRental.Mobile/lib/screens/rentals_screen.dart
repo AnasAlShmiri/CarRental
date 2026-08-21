@@ -52,7 +52,7 @@ class _RentalsScreenState extends State<RentalsScreen> {
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(.16),
+                    color: AppTheme.primary.withValues(alpha: .16),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -127,25 +127,23 @@ class _RentalsScreenState extends State<RentalsScreen> {
   }
 
   Widget _filterBar() => SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        reverse: true,
-        child: Row(
-          children: [null, 'Active', 'Completed', 'Cancelled']
-              .map(
-                (option) => Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: ChoiceChip(
-                    label: Text(
-                      option == null ? 'الكل' : _statusLabel(option),
-                    ),
-                    selected: _filter == option,
-                    onSelected: (_) => setState(() => _filter = option),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      );
+    scrollDirection: Axis.horizontal,
+    reverse: true,
+    child: Row(
+      children: [null, 'Active', 'Completed', 'Cancelled']
+          .map(
+            (option) => Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: ChoiceChip(
+                label: Text(option == null ? 'الكل' : _statusLabel(option)),
+                selected: _filter == option,
+                onSelected: (_) => setState(() => _filter = option),
+              ),
+            ),
+          )
+          .toList(),
+    ),
+  );
 
   Widget _rentalCard(Rental rental) {
     final color = _statusColor(rental.status);
@@ -295,44 +293,44 @@ class _RentalsScreenState extends State<RentalsScreen> {
     final controller = AppScope.of(context).rentals;
     final success = await controller.cancel(rental.id);
     if (!mounted || success || controller.errorMessage == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(controller.errorMessage!)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(controller.errorMessage!)));
   }
 
   String _statusLabel(String status) => switch (status) {
-        'Active' => 'نشطة',
-        'Completed' => 'مكتملة',
-        'Cancelled' => 'ملغاة',
-        _ => status,
-      };
+    'Active' => 'نشطة',
+    'Completed' => 'مكتملة',
+    'Cancelled' => 'ملغاة',
+    _ => status,
+  };
 
   Color _statusColor(String status) => switch (status) {
-        'Active' => AppTheme.success,
-        'Completed' => AppTheme.primary,
-        'Cancelled' => AppTheme.danger,
-        _ => AppTheme.muted,
-      };
+    'Active' => AppTheme.success,
+    'Completed' => AppTheme.primary,
+    'Cancelled' => AppTheme.danger,
+    _ => AppTheme.muted,
+  };
 
   Widget _errorState(RentalsController controller) => LuxuryEmptyState(
-        icon: Icons.cloud_off_rounded,
-        title: 'تعذر تحميل حجوزاتك',
-        description: controller.errorMessage ?? 'تحقق من الاتصال ثم أعد المحاولة.',
-        action: OutlinedButton.icon(
-          onPressed: controller.load,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('إعادة المحاولة'),
-        ),
-      );
+    icon: Icons.cloud_off_rounded,
+    title: 'تعذر تحميل حجوزاتك',
+    description: controller.errorMessage ?? 'تحقق من الاتصال ثم أعد المحاولة.',
+    action: OutlinedButton.icon(
+      onPressed: controller.load,
+      icon: const Icon(Icons.refresh_rounded),
+      label: const Text('إعادة المحاولة'),
+    ),
+  );
 
   Future<void> _showNewRentalSheet() async {
     final services = AppScope.of(context);
     await services.cars.load();
     if (!mounted) return;
     if (services.cars.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(services.cars.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(services.cars.errorMessage!)));
       return;
     }
 
@@ -347,7 +345,7 @@ class _RentalsScreenState extends State<RentalsScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => _BookingSheet(
+      builder: (sheetContext) => BookingSheet(
         cars: cars,
         onSubmit: (carId, start, end) async {
           final success = await services.rentals.create(
@@ -364,19 +362,33 @@ class _RentalsScreenState extends State<RentalsScreen> {
   }
 }
 
-class _BookingSheet extends StatefulWidget {
-  const _BookingSheet({required this.cars, required this.onSubmit});
+class BookingSheet extends StatefulWidget {
+  const BookingSheet({
+    super.key,
+    required this.cars,
+    required this.onSubmit,
+    this.initialCar,
+  });
 
   final List<Car> cars;
-  final Future<String?> Function(int carId, DateTime start, DateTime end) onSubmit;
+  final Car? initialCar;
+  final Future<String?> Function(int carId, DateTime start, DateTime end)
+  onSubmit;
 
   @override
-  State<_BookingSheet> createState() => _BookingSheetState();
+  State<BookingSheet> createState() => _BookingSheetState();
 }
 
-class _BookingSheetState extends State<_BookingSheet> {
+class _BookingSheetState extends State<BookingSheet> {
   final _formKey = GlobalKey<FormState>();
   Car? _car;
+
+  @override
+  void initState() {
+    super.initState();
+    _car = widget.initialCar;
+  }
+
   DateTime? _start;
   DateTime? _end;
   bool _submitting = false;
@@ -412,106 +424,104 @@ class _BookingSheetState extends State<_BookingSheet> {
     final error = await widget.onSubmit(_car!.id, _start!, _end!);
     if (!mounted) return;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
     }
     setState(() => _submitting = false);
   }
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 5,
-          bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-        ),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    padding: EdgeInsets.only(
+      left: 20,
+      right: 20,
+      top: 5,
+      bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+    ),
+    child: Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'صمّم رحلتك القادمة',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'اختر السيارة والتواريخ، وسنتولى باقي التفاصيل.',
+              style: TextStyle(color: AppTheme.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<Car>(
+              initialValue: _car,
+              decoration: const InputDecoration(
+                labelText: 'السيارة المتاحة',
+                prefixIcon: Icon(Icons.directions_car_outlined),
+              ),
+              items: widget.cars
+                  .map(
+                    (car) => DropdownMenuItem(
+                      value: car,
+                      child: Text(car.displayName),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _car = value),
+              validator: (value) => value == null ? 'اختر السيارة' : null,
+            ),
+            const SizedBox(height: 15),
+            Row(
               children: [
-                const Text(
-                  'صمّم رحلتك القادمة',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'اختر السيارة والتواريخ، وسنتولى باقي التفاصيل.',
-                  style: TextStyle(color: AppTheme.muted, fontSize: 12),
-                ),
-                const SizedBox(height: 20),
-                DropdownButtonFormField<Car>(
-                  value: _car,
-                  decoration: const InputDecoration(
-                    labelText: 'السيارة المتاحة',
-                    prefixIcon: Icon(Icons.directions_car_outlined),
+                Expanded(
+                  child: _dateButton(
+                    label: _start == null ? 'بداية الرحلة' : _format(_start!),
+                    icon: Icons.login_rounded,
+                    onTap: () => _pickDate(true),
                   ),
-                  items: widget.cars
-                      .map(
-                        (car) => DropdownMenuItem(
-                          value: car,
-                          child: Text(car.displayName),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() => _car = value),
-                  validator: (value) => value == null ? 'اختر السيارة' : null,
                 ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _dateButton(
-                        label: _start == null
-                            ? 'بداية الرحلة'
-                            : _format(_start!),
-                        icon: Icons.login_rounded,
-                        onTap: () => _pickDate(true),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _dateButton(
-                        label: _end == null ? 'نهاية الرحلة' : _format(_end!),
-                        icon: Icons.logout_rounded,
-                        onTap: () => _pickDate(false),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _submitting ? null : _submit,
-                  icon: _submitting
-                      ? const SizedBox(
-                          height: 19,
-                          width: 19,
-                          child: CircularProgressIndicator(
-                            color: AppTheme.primaryLight,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.check_rounded),
-                  label: Text(
-                    _submitting ? 'جارٍ تأكيد الرحلة...' : 'تأكيد الحجز',
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _dateButton(
+                    label: _end == null ? 'نهاية الرحلة' : _format(_end!),
+                    icon: Icons.logout_rounded,
+                    onTap: () => _pickDate(false),
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      height: 19,
+                      width: 19,
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryLight,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.check_rounded),
+              label: Text(_submitting ? 'جارٍ تأكيد الرحلة...' : 'تأكيد الحجز'),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _dateButton({
     required String label,
     required IconData icon,
     required VoidCallback onTap,
   }) => OutlinedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 17),
-        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-      );
+    onPressed: onTap,
+    icon: Icon(icon, size: 17),
+    label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+  );
 
   String _format(DateTime date) =>
       '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';

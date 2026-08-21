@@ -54,6 +54,19 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<dynamic> put(
+    String path, {
+    Object? body,
+    bool authenticated = false,
+  }) async {
+    final response = await _client.put(
+      Uri.parse(ApiConfig.resolveUrl(path)),
+      headers: await _headers(authenticated: authenticated),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _decode(response);
+  }
+
   dynamic _decode(http.Response response) {
     Object? decoded;
     try {
@@ -81,7 +94,9 @@ class ApiClient {
     if (statusCode == 403) return 'ليس لديك صلاحية لتنفيذ هذا الإجراء.';
     if (statusCode == 404) return 'العنصر المطلوب غير موجود.';
     if (statusCode == 408) return 'انتهت مهلة الاتصال بالخادم.';
-    if (statusCode == 429) return 'تم تجاوز عدد المحاولات المسموح بها. انتظر قليلًا ثم حاول مرة أخرى.';
+    if (statusCode == 429) {
+      return 'تم تجاوز عدد المحاولات المسموح بها. انتظر قليلًا ثم حاول مرة أخرى.';
+    }
 
     if (decoded is Map<String, dynamic>) {
       final errors = decoded['errors'];

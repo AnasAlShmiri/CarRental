@@ -34,9 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
     }
   }
 
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = AppScope.of(context).auth;
     return Scaffold(
-      backgroundColor: AppTheme.midnight,
+      backgroundColor: AppTheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'رحلتك تبدأ من هنا.',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.ink,
                     fontSize: 32,
                     height: 1.16,
                     fontWeight: FontWeight.w900,
@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'اكتشف سياراتك المفضلة واحجز رحلتك بسهولة وأمان.',
                   style: TextStyle(
-                    color: Color(0xA8FFFFFF),
+                    color: AppTheme.muted,
                     height: 1.7,
                     fontSize: 13,
                   ),
@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
-                    borderRadius: BorderRadius.circular(27),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   ),
                   child: Form(
                     key: _formKey,
@@ -135,7 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                          validator: (value) => value == null || value.length < 6
+                          validator: (value) =>
+                              value == null || value.length < 6
                               ? 'كلمة المرور يجب ألا تقل عن 6 أحرف'
                               : null,
                         ),
@@ -176,14 +177,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Icon(
                       Icons.verified_user_outlined,
-                      color: AppTheme.primaryLight,
+                      color: AppTheme.primary,
                       size: 16,
                     ),
                     const SizedBox(width: 7),
                     Text(
                       'بياناتك محمية باتصال آمن',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(.65),
+                        color: AppTheme.muted,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -199,44 +200,44 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _brandMark() => Row(
+    children: [
+      Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryMuted,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        child: const Icon(
+          Icons.directions_car_filled_rounded,
+          color: AppTheme.primary,
+          size: 26,
+        ),
+      ),
+      const SizedBox(width: 12),
+      const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              gradient: AppTheme.goldGradient,
-              borderRadius: BorderRadius.circular(17),
-            ),
-            child: const Icon(
-              Icons.directions_car_filled_rounded,
-              color: AppTheme.midnight,
-              size: 26,
+          Text(
+            'CAR RENTAL',
+            style: TextStyle(
+              color: AppTheme.primary,
+              fontSize: 15,
+              letterSpacing: 2.1,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CAR RENTAL',
-                style: TextStyle(
-                  color: AppTheme.primaryLight,
-                  fontSize: 15,
-                  letterSpacing: 2.1,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Your premium journey',
-                style: TextStyle(
-                  color: Color(0x88FFFFFF),
-                  fontSize: 10,
-                  letterSpacing: .8,
-                ),
-              ),
-            ],
+          SizedBox(height: 2),
+          Text(
+            'Your premium journey',
+            style: TextStyle(
+              color: AppTheme.muted,
+              fontSize: 10,
+              letterSpacing: .8,
+            ),
           ),
         ],
-      );
+      ),
+    ],
+  );
 }

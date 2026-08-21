@@ -49,7 +49,8 @@ class AuthGate extends StatelessWidget {
     final auth = AppScope.of(context).auth;
     return AnimatedBuilder(
       animation: auth,
-      builder: (context, _) => auth.isAuthenticated ? const HomeScreen() : const LoginScreen(),
+      builder: (context, _) =>
+          auth.isAuthenticated ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

@@ -18,12 +18,11 @@ class AppScope extends InheritedWidget {
 
 class AppServices {
   AppServices._(ApiClient client)
-      : api = client,
-        auth = AuthController(AuthRepository(client)),
-        cars = CarsController(CarRepository(client)),
-        rentals = RentalsController(RentalRepository(client)),
-        customers = CustomerController(CustomerRepository(client));
-
+    : api = client,
+      auth = AuthController(AuthRepository(client)),
+      cars = CarsController(CarRepository(client)),
+      rentals = RentalsController(RentalRepository(client)),
+      customers = CustomerController(CustomerRepository(client));
 
   final ApiClient api;
   final AuthController auth;

@@ -13,7 +13,10 @@ class ApiService {
   static final _rentals = RentalRepository(_api);
   static final _customers = CustomerRepository(_api);
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
     final session = await _auth.login(email, password);
     return {
       'token': session.token,

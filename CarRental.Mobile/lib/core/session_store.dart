@@ -12,7 +12,8 @@ class SessionStore {
   static const emailKey = 'auth_email';
   static const phoneKey = 'auth_phone';
 
-  static Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
+  static Future<SharedPreferences> get _prefs =>
+      SharedPreferences.getInstance();
 
   static Future<void> save({
     required String token,
@@ -51,13 +52,18 @@ class SessionStore {
     }
   }
 
-  static Future<String?> readToken() async => (await _prefs).getString(tokenKey);
-  static Future<String?> readUsername() async => (await _prefs).getString(usernameKey);
+  static Future<String?> readToken() async =>
+      (await _prefs).getString(tokenKey);
+  static Future<String?> readUsername() async =>
+      (await _prefs).getString(usernameKey);
   static Future<String?> readRole() async => (await _prefs).getString(roleKey);
-  static Future<int?> readCustomerId() async => (await _prefs).getInt(customerIdKey);
+  static Future<int?> readCustomerId() async =>
+      (await _prefs).getInt(customerIdKey);
   static Future<String?> readName() async => (await _prefs).getString(nameKey);
-  static Future<String?> readEmail() async => (await _prefs).getString(emailKey);
-  static Future<String?> readPhone() async => (await _prefs).getString(phoneKey);
+  static Future<String?> readEmail() async =>
+      (await _prefs).getString(emailKey);
+  static Future<String?> readPhone() async =>
+      (await _prefs).getString(phoneKey);
 
   static Future<DateTime?> readExpiry() async {
     final raw = (await _prefs).getString(expiresAtKey);
@@ -69,6 +75,18 @@ class SessionStore {
     if (token == null || token.isEmpty) return false;
     final expiry = await readExpiry();
     return expiry == null || expiry.isAfter(DateTime.now().toUtc());
+  }
+
+  static Future<void> updateCustomerProfile({
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    final prefs = await _prefs;
+    await _setOrRemove(prefs, nameKey, name.trim());
+    await _setOrRemove(prefs, emailKey, email.trim());
+    await _setOrRemove(prefs, phoneKey, phone.trim());
+    await prefs.setString(usernameKey, email.trim());
   }
 
   static Future<void> clear() async {

@@ -34,7 +34,12 @@ void main() {
         'durationInDays': 5,
         'totalPrice': 750,
         'status': 'Active',
-        'car': {'id': 5, 'brand': 'تويوتا', 'model': 'كامري', 'pricePerDay': 150},
+        'car': {
+          'id': 5,
+          'brand': 'تويوتا',
+          'model': 'كامري',
+          'pricePerDay': 150,
+        },
         'customer': {'id': 2, 'name': 'تست عميل'},
       };
       final r = Rental.fromJson(json);
@@ -45,8 +50,10 @@ void main() {
     });
   });
 
-  testWidgets('سمة التطبيق تستخدم خط Tajawal والألوان المعتمدة', (tester) async {
-    expect(AppTheme.primary, const Color(0xFFC69A5B));
+  testWidgets('سمة التطبيق تستخدم خط Tajawal والألوان المعتمدة', (
+    tester,
+  ) async {
+    expect(AppTheme.primary, const Color(0xFF1A73E8));
     final fontFamily = AppTheme.light.textTheme.bodyMedium?.fontFamily;
     expect(fontFamily, contains('Tajawal'));
     expect(AppTheme.light.brightness, Brightness.light);

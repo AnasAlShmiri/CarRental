@@ -18,7 +18,8 @@ class AuthController extends ChangeNotifier {
     final valid = await repository.hasSession();
     final role = await SessionStore.readRole();
     final customerId = await repository.customerId();
-    isAuthenticated = valid && role?.toLowerCase() == 'customer' && customerId != null;
+    isAuthenticated =
+        valid && role?.toLowerCase() == 'customer' && customerId != null;
     if (isAuthenticated) {
       username = await repository.username();
     } else if (valid) {
@@ -123,6 +124,8 @@ class CustomerController extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
+  bool isSaving = false;
+
   Future<void> load() async {
     isLoading = true;
     errorMessage = null;
@@ -135,6 +138,37 @@ class CustomerController extends ChangeNotifier {
       errorMessage = 'تعذر تحميل ملفك الشخصي.';
     } finally {
       isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateProfile({
+    required String name,
+    required String phone,
+  }) async {
+    isSaving = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final updated = await repository.updateMyProfile(
+        name: name,
+        phone: phone,
+      );
+      profile = updated;
+      await SessionStore.updateCustomerProfile(
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone,
+      );
+      return true;
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+      return false;
+    } catch (_) {
+      errorMessage = 'تعذر حفظ بياناتك. تحقق من الاتصال وحاول مرة أخرى.';
+      return false;
+    } finally {
+      isSaving = false;
       notifyListeners();
     }
   }
