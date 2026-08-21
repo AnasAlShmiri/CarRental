@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/api_config.dart';
 import '../core/api_service.dart';
 import '../core/app_theme.dart';
 import '../core/models.dart';
@@ -85,7 +86,7 @@ class _CarsScreenState extends State<CarsScreen> {
                   color: const Color(0xFFF5F7FA),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.car_rental, size: 38, color: AppTheme.primary.withOpacity(.7)),
+                child: _carImage(car),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -109,6 +110,27 @@ class _CarsScreenState extends State<CarsScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _carImage(Car car) {
+    final path = car.imageUrl;
+    if (path == null || path.isEmpty) {
+      return Icon(Icons.car_rental, size: 38, color: AppTheme.primary.withOpacity(.7));
+    }
+
+    final url = path.startsWith('http') ? path : '${ApiConfig.baseUrl}$path';
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Icon(
+          Icons.broken_image_outlined,
+          size: 34,
+          color: AppTheme.primary.withOpacity(.7),
         ),
       ),
     );

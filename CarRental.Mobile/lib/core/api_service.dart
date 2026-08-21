@@ -60,7 +60,7 @@ class ApiService {
       Uri.parse('${ApiConfig.baseUrl}/api/rentals'),
       headers: await _headers(auth: true),
     );
-    if (response.statusCode != 401) throw Exception('تعذر تحميل الإيجارات — تأكد من تسجيل الدخول');
+    if (response.statusCode != 200) throw Exception('تعذر تحميل الإيجارات — تأكد من تسجيل الدخول');
     final list = jsonDecode(utf8.decode(response.bodyBytes)) as List;
     return list.map((e) => Rental.fromJson(e as Map<String, dynamic>)).toList();
   }

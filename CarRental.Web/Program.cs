@@ -28,7 +28,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     switch (provider.ToLowerInvariant())
     {
         case "sqlite":
-            options.UseSqlite(connectionString ?? "Data Source=carrental.db");
+            options.UseSqlite(connectionString ?? "Data Source=../car-rental.db");
             break;
 
         case "inmemory":
@@ -51,9 +51,9 @@ builder.Services.Configure<ImageStorageOptions>(
     builder.Configuration.GetSection(ImageStorageOptions.SectionName));
 builder.Services.PostConfigure<ImageStorageOptions>(o =>
 {
-    if (string.IsNullOrWhiteSpace(o.PhysicalRootPath))
-        o.PhysicalRootPath = builder.Environment.WebRootPath
-                             ?? Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+    // MVC owns the shared web root used by both MVC and API for car photos.
+    o.PhysicalRootPath = Path.GetFullPath(Path.Combine(
+        builder.Environment.ContentRootPath, "wwwroot"));
 });
 builder.Services.AddScoped<ICarImageStorage, LocalCarImageStorage>();
 

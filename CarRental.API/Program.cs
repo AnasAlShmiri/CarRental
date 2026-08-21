@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Microsoft.Extensions.FileProviders;
 
 // Form values (multipart/form-data) parse numbers using the server's culture.
 // Forcing invariant keeps "150.50" meaning the same price on any Windows locale
@@ -34,7 +35,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     switch (provider.ToLowerInvariant())
     {
         case "sqlite":
-            options.UseSqlite(connectionString ?? "Data Source=carrental.db");
+            options.UseSqlite(connectionString ?? "Data Source=../car-rental.db");
             break;
 
         case "inmemory":
@@ -59,10 +60,9 @@ builder.Services.Configure<ImageStorageOptions>(
     builder.Configuration.GetSection(ImageStorageOptions.SectionName));
 builder.Services.PostConfigure<ImageStorageOptions>(o =>
 {
-    // Only the host knows its web root, so it is supplied here rather than in config.
-    if (string.IsNullOrWhiteSpace(o.PhysicalRootPath))
-        o.PhysicalRootPath = builder.Environment.WebRootPath
-                             ?? Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+    // MVC and API must write car photos to the same physical folder.
+    o.PhysicalRootPath = Path.GetFullPath(Path.Combine(
+        builder.Environment.ContentRootPath, "..", "CarRental.Web", "wwwroot"));
 });
 builder.Services.AddScoped<ICarImageStorage, LocalCarImageStorage>();
 
@@ -284,6 +284,17 @@ var webRoot = app.Environment.WebRootPath
 Directory.CreateDirectory(Path.Combine(webRoot, "uploads"));
 
 app.UseStaticFiles();
+
+// The MVC host owns the shared wwwroot. Expose its uploads folder from the API too,
+// so imageUrl values returned to Flutter work regardless of which host uploaded them.
+var sharedWebRoot = Path.GetFullPath(Path.Combine(
+    app.Environment.ContentRootPath, "..", "CarRental.Web", "wwwroot"));
+Directory.CreateDirectory(Path.Combine(sharedWebRoot, "uploads"));
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(sharedWebRoot, "uploads")),
+    RequestPath = "/uploads"
+});
 
 app.UseCors(CorsPolicy);
 
