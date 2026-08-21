@@ -8,6 +8,8 @@ public interface ICustomerRepository
 
     Task<Customer?> GetByIdAsync(int id);
 
+    Task<Customer?> GetByEmailAsync(string email);
+
     Task<bool> ExistsAsync(int id);
 
     /// <summary>

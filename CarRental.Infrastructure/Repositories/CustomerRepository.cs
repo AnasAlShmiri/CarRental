@@ -13,6 +13,12 @@ public class CustomerRepository(ApplicationDbContext db) : ICustomerRepository
     public async Task<Customer?> GetByIdAsync(int id) =>
         await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
 
+    public async Task<Customer?> GetByEmailAsync(string email)
+    {
+        var normalized = email.Trim().ToLower();
+        return await db.Customers.FirstOrDefaultAsync(c => c.Email.ToLower() == normalized);
+    }
+
     public async Task<bool> ExistsAsync(int id) =>
         await db.Customers.AnyAsync(c => c.Id == id);
 
@@ -27,6 +33,7 @@ public class CustomerRepository(ApplicationDbContext db) : ICustomerRepository
 
     public async Task<Customer> CreateAsync(Customer customer)
     {
+        customer.Email = customer.Email.Trim().ToLowerInvariant();
         customer.CreatedAt = DateTime.UtcNow;
 
         db.Customers.Add(customer);

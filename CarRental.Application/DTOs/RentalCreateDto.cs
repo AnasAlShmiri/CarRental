@@ -21,3 +21,17 @@ public class RentalCreateDto
     [Required]
     public DateTime EndDate { get; set; }
 }
+
+
+/// <summary>Customer booking payload. The customer identity comes from the JWT.</summary>
+public class CustomerRentalCreateDto
+{
+    [Range(1, int.MaxValue, ErrorMessage = "CarId must be a positive number.")]
+    public int CarId { get; set; }
+
+    [Required]
+    public DateTime StartDate { get; set; }
+
+    [Required]
+    public DateTime EndDate { get; set; }
+}

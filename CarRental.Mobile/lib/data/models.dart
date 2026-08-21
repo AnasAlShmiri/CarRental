@@ -5,20 +5,34 @@ class AuthSession {
   final DateTime expiresAtUtc;
   final String username;
   final String role;
+  final int? customerId;
+  final String? name;
+  final String? email;
+  final String? phone;
 
   const AuthSession({
     required this.token,
     required this.expiresAtUtc,
     required this.username,
     required this.role,
+    this.customerId,
+    this.name,
+    this.email,
+    this.phone,
   });
+
+  bool get isCustomer => role.toLowerCase() == 'customer';
 
   factory AuthSession.fromJson(Map<String, dynamic> json) => AuthSession(
         token: json['token']?.toString() ?? '',
         expiresAtUtc: DateTime.tryParse(json['expiresAtUtc']?.toString() ?? '') ??
             DateTime.now().toUtc().add(const Duration(hours: 1)),
-        username: json['username']?.toString() ?? '',
+        username: json['username']?.toString() ?? json['email']?.toString() ?? '',
         role: json['role']?.toString() ?? '',
+        customerId: json['customerId'] == null ? null : _asInt(json['customerId']),
+        name: json['name']?.toString(),
+        email: json['email']?.toString(),
+        phone: json['phone']?.toString(),
       );
 }
 

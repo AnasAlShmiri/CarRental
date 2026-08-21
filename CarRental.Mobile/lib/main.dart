@@ -5,6 +5,7 @@ import 'app_scope.dart';
 import 'core/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ class CarRentalApp extends StatelessWidget {
       routes: {
         '/': (_) => const AuthGate(),
         '/login': (_) => const LoginScreen(),
+        '/register': (_) => const RegisterScreen(),
         '/home': (_) => const HomeScreen(),
       },
       initialRoute: '/',

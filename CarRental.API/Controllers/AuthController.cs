@@ -56,7 +56,7 @@ public class AuthController(
 
     /// <summary>Echoes the caller's identity — handy for verifying a token works.</summary>
     [HttpGet("me")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult Me() => Ok(new

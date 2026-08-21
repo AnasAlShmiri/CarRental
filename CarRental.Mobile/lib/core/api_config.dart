@@ -29,7 +29,8 @@ class ApiConfig {
     }
   }
 
-  static String get loginUrl => '$baseUrl/api/auth/login';
+  static String get customerLoginUrl => '$baseUrl/api/customer-auth/login';
+  static String get customerRegisterUrl => '$baseUrl/api/customer-auth/register';
 
   static String resolveUrl(String pathOrUrl) {
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {

@@ -111,7 +111,10 @@ if (app.Environment.IsDevelopment())
         if (isSqlServer)
             db.Database.Migrate();
         else
+        {
             db.Database.EnsureCreated();
+            await SqliteSchemaCompatibility.EnsureAsync(db);
+        }
 
         logger.LogInformation("Database is ready ({Provider}).", db.Database.ProviderName);
     }

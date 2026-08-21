@@ -4,11 +4,24 @@ import 'session_store.dart';
 class AuthService {
   AuthService._();
 
-  static Future<void> saveSession(String token, String username) => SessionStore.save(
+  @Deprecated('Use AuthRepository.login or AuthRepository.register instead.')
+  static Future<void> saveSession(
+    String token,
+    String username, {
+    String role = 'Customer',
+    int? customerId,
+    String? name,
+    String? email,
+    String? phone,
+  }) => SessionStore.save(
         token: token,
         username: username,
-        role: 'Admin',
+        role: role,
         expiresAtUtc: DateTime.now().toUtc().add(const Duration(hours: 8)),
+        customerId: customerId,
+        name: name,
+        email: email,
+        phone: phone,
       );
 
   static Future<String?> get token => SessionStore.readToken();

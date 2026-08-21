@@ -104,5 +104,5 @@ class _CarsScreenState extends State<CarsScreen> {
         Row(children: [const Icon(Icons.payments_outlined, color: AppTheme.primary, size: 19), const SizedBox(width: 7), Text('${car.pricePerDay.toStringAsFixed(2)} ر.س لليوم', style: const TextStyle(fontWeight: FontWeight.w800)), const Spacer(), const Icon(Icons.verified_outlined, color: AppTheme.success, size: 18), const SizedBox(width: 5), const Text('اختيار موثوق', style: TextStyle(color: AppTheme.muted, fontSize: 11))]),
         const SizedBox(height: 20),
         ElevatedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded), label: const Text('إغلاق التفاصيل')),
-      ]));
+      ])));
 }

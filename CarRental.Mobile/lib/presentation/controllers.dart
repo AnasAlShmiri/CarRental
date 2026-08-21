@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../../core/api_client.dart';
-import '../../data/models.dart';
-import '../../data/repositories.dart';
+import '../core/api_client.dart';
+import '../core/session_store.dart';
+import '../data/models.dart';
+import '../data/repositories.dart';
 
 class AuthController extends ChangeNotifier {
   AuthController(this.repository);
@@ -14,18 +15,26 @@ class AuthController extends ChangeNotifier {
   String? errorMessage;
 
   Future<void> restore() async {
-    isAuthenticated = await repository.hasSession();
-    username = await repository.username();
+    final valid = await repository.hasSession();
+    final role = await SessionStore.readRole();
+    final customerId = await repository.customerId();
+    isAuthenticated = valid && role?.toLowerCase() == 'customer' && customerId != null;
+    if (isAuthenticated) {
+      username = await repository.username();
+    } else if (valid) {
+      await repository.logout();
+      username = null;
+    }
     notifyListeners();
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String email, String password) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
     try {
-      final session = await repository.login(username, password);
-      this.username = session.username;
+      final session = await repository.login(email, password);
+      username = session.name ?? session.email ?? session.username;
       isAuthenticated = true;
       return true;
     } on ApiException catch (error) {
@@ -33,6 +42,37 @@ class AuthController extends ChangeNotifier {
       return false;
     } catch (_) {
       errorMessage = 'تعذر الاتصال بالخادم. تحقق من عنوان API والشبكة.';
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final session = await repository.register(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+      username = session.name ?? session.email ?? session.username;
+      isAuthenticated = true;
+      return true;
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+      return false;
+    } catch (_) {
+      errorMessage = 'تعذر إنشاء الحساب. تحقق من الاتصال وحاول مرة أخرى.';
       return false;
     } finally {
       isLoading = false;
@@ -61,11 +101,11 @@ class CarsController extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      cars = await repository.getCars();
+      cars = await repository.getAvailableCars();
     } on ApiException catch (error) {
       errorMessage = error.message;
     } catch (_) {
-      errorMessage = 'تعذر تحميل السيارات.';
+      errorMessage = 'تعذر تحميل السيارات المتاحة.';
     } finally {
       isLoading = false;
       notifyListeners();
@@ -73,6 +113,31 @@ class CarsController extends ChangeNotifier {
   }
 
   List<Car> get availableCars => cars.where((car) => car.isAvailable).toList();
+}
+
+class CustomerController extends ChangeNotifier {
+  CustomerController(this.repository);
+  final CustomerRepository repository;
+
+  Customer? profile;
+  bool isLoading = false;
+  String? errorMessage;
+
+  Future<void> load() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      profile = await repository.getMyProfile();
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+    } catch (_) {
+      errorMessage = 'تعذر تحميل ملفك الشخصي.';
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }
 
 class RentalsController extends ChangeNotifier {
@@ -89,11 +154,11 @@ class RentalsController extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      rentals = await repository.getRentals();
+      rentals = await repository.getMyRentals();
     } on ApiException catch (error) {
       errorMessage = error.message;
     } catch (_) {
-      errorMessage = 'تعذر تحميل الإيجارات.';
+      errorMessage = 'تعذر تحميل حجوزاتك.';
     } finally {
       isLoading = false;
       notifyListeners();
@@ -102,7 +167,6 @@ class RentalsController extends ChangeNotifier {
 
   Future<bool> create({
     required int carId,
-    required int customerId,
     required DateTime start,
     required DateTime end,
   }) async {
@@ -110,12 +174,7 @@ class RentalsController extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      await repository.createRental(
-        carId: carId,
-        customerId: customerId,
-        start: start,
-        end: end,
-      );
+      await repository.createRental(carId: carId, start: start, end: end);
       await load();
       return true;
     } on ApiException catch (error) {
@@ -123,6 +182,26 @@ class RentalsController extends ChangeNotifier {
       return false;
     } catch (_) {
       errorMessage = 'تعذر إنشاء الحجز.';
+      return false;
+    } finally {
+      isSubmitting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> cancel(int rentalId) async {
+    isSubmitting = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      await repository.cancelRental(rentalId);
+      await load();
+      return true;
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+      return false;
+    } catch (_) {
+      errorMessage = 'تعذر إلغاء الحجز.';
       return false;
     } finally {
       isSubmitting = false;

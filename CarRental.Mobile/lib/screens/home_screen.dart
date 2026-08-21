@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: Colors.white70)),
           ]),
           const SizedBox(height: 34),
-          Text('مرحبًا بك، ${username ?? 'admin'}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+          Text('مرحبًا بك، ${username ?? 'عميلنا العزيز'}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 6),
           const Text('أدر رحلاتك بتفاصيل أنيقة', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 12)),
           const SizedBox(height: 30),

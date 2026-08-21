@@ -12,7 +12,7 @@ namespace CarRental.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class StatisticsController(IStatisticsRepository stats) : ControllerBase
 {
     /// <summary>All dashboard statistics in one call.</summary>

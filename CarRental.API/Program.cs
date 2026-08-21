@@ -3,12 +3,14 @@ using System.Text;
 using CarRental.API.Binding;
 using CarRental.API.Errors;
 using CarRental.Application.Interfaces;
+using CarRental.Domain.Models;
 using CarRental.Infrastructure.Auth;
 using CarRental.Infrastructure.Data;
 using CarRental.Infrastructure.Repositories;
 using CarRental.Infrastructure.Services;
 using CarRental.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -53,6 +55,7 @@ builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IRentalRepository, RentalRepository>();
 builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
+builder.Services.AddScoped<IPasswordHasher<Customer>, PasswordHasher<Customer>>();
 
 // ── Car image storage ─────────────────────────────────────────────────────────
 // Files land in wwwroot/uploads and are served by UseStaticFiles() further down.
@@ -251,7 +254,10 @@ if (app.Environment.IsDevelopment())
         if (isSqlServer)
             db.Database.Migrate();
         else
+        {
             db.Database.EnsureCreated();
+            await SqliteSchemaCompatibility.EnsureAsync(db);
+        }
 
         logger.LogInformation("Database is ready ({Provider}).", db.Database.ProviderName);
     }
