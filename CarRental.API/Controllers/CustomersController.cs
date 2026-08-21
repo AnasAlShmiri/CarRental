@@ -13,7 +13,7 @@ namespace CarRental.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class CustomersController(ICustomerRepository repo) : ControllerBase
 {
     [HttpGet]

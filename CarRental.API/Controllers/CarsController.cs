@@ -70,7 +70,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
     /// ".jpg" is rejected — and in that case the car is NOT created.
     /// </remarks>
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(CarDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -120,7 +120,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
     /// out to keep the current status.
     /// </summary>
     [HttpPut("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(CarDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -197,7 +197,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

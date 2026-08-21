@@ -12,7 +12,7 @@ namespace CarRental.Web.Controllers;
 /// details, create (with photo upload), edit (photo replace/remove + status),
 /// and delete with rental-history safeguards.
 /// </summary>
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class CarsController(ICarRepository repo, ICarImageStorage images) : Controller
 {
     // GET: /cars

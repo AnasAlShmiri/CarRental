@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CarRental.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class RentalsController(
     IRentalRepository rentalRepo,
     ICarRepository carRepo,

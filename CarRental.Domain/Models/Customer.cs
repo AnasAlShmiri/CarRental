@@ -15,6 +15,12 @@ public class Customer
     [MaxLength(20)]
     public string Phone { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Stored password hash for customer self-service authentication.
+    /// Never expose this property through a response DTO.
+    /// </summary>
+    public string? PasswordHash { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Rental> Rentals { get; set; } = [];

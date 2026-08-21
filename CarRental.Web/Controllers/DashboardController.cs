@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CarRental.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class DashboardController(IStatisticsRepository statistics) : Controller
 {
     // GET: /

@@ -13,7 +13,7 @@ public class TokenService(IOptions<JwtSettings> options) : ITokenService
 {
     private readonly JwtSettings _settings = options.Value;
 
-    public AuthResponseDto CreateToken(string username, string role)
+    public AuthResponseDto CreateToken(string username, string role, int? customerId = null)
     {
         if (string.IsNullOrWhiteSpace(_settings.Key))
             throw new InvalidOperationException(
@@ -21,13 +21,16 @@ public class TokenService(IOptions<JwtSettings> options) : ITokenService
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
-            new Claim(ClaimTypes.Name, username),
-            new Claim(ClaimTypes.Role, role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, username),
+            new(ClaimTypes.Name, username),
+            new(ClaimTypes.Role, role),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (customerId.HasValue)
+            claims.Add(new Claim("customer_id", customerId.Value.ToString()));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

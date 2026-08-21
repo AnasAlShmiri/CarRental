@@ -10,6 +10,7 @@ namespace CarRental.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize(Roles = "Admin")]
 public class RentalsController(
     IRentalRepository rentalRepo,
     ICarRepository carRepo,
@@ -21,14 +22,8 @@ public class RentalsController(
     public async Task<ActionResult<IEnumerable<RentalDto>>> GetAll() =>
         Ok((await rentalRepo.GetAllAsync()).ToDtos());
 
-    /// <summary>A customer's rental history — used by the mobile app's "My rentals" screen.</summary>
-    /// <remarks>
-    /// Anonymous on purpose: booking (POST /api/Rentals) is anonymous because the mobile
-    /// app has no customer login, so viewing one's own rentals must be too — otherwise
-    /// the app could create rentals it can never display.
-    /// </remarks>
+    /// <summary>Administrative view of a customer's rental history.</summary>
     [HttpGet("customer/{customerId:int}")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(IEnumerable<RentalDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<RentalDto>>> GetByCustomer(int customerId)
@@ -63,7 +58,6 @@ public class RentalsController(
     /// atomically with the insert.
     /// </summary>
     [HttpPost]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(RentalDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
