@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json.Serialization;
 using CarRental.Application.Interfaces;
 using CarRental.Infrastructure.Auth;
@@ -19,9 +20,13 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ar");
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database (same provider switch as CarRental.API — one database, two hosts) ──
-var provider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var isSqlServer = provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase);
+if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+    connectionString = DatabasePathResolver.ResolveSqliteConnection(
+        connectionString,
+        builder.Environment.ContentRootPath);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -100,6 +105,25 @@ builder.Services.AddHealthChecks();
 // ── Build ───────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
+var jwtKey = builder.Configuration["Jwt:Key"];
+var adminPassword = builder.Configuration["AdminUser:Password"];
+if (!app.Environment.IsDevelopment()
+    && (string.IsNullOrWhiteSpace(jwtKey)
+        || jwtKey.Contains("CHANGE-ME", StringComparison.OrdinalIgnoreCase)
+        || Encoding.UTF8.GetByteCount(jwtKey) < 32
+        || string.IsNullOrWhiteSpace(adminPassword)
+        || adminPassword.Equals("Admin@12345", StringComparison.Ordinal)))
+{
+    throw new InvalidOperationException(
+        "Production startup requires a non-default Jwt:Key (at least 32 bytes) and AdminUser:Password.");
+}
+
+if (app.Environment.IsDevelopment()
+    && (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Contains("CHANGE-ME", StringComparison.OrdinalIgnoreCase)))
+{
+    app.Logger.LogWarning("Development JWT signing key is a placeholder. Configure Jwt:Key before any deployment.");
+}
+
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -135,7 +159,8 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 
 // Car photos are served from the SAME wwwroot/uploads folder both hosts share.
 Directory.CreateDirectory(Path.Combine(

@@ -1,4 +1,6 @@
 using CarRental.Application.Interfaces;
+using System.Data;
+using CarRental.Domain.Exceptions;
 using CarRental.Domain.Models;
 using CarRental.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -48,8 +50,23 @@ public class RentalRepository(ApplicationDbContext db) : IRentalRepository
 
     public async Task<Rental> CreateAsync(Rental rental)
     {
+        if (rental.StartDate.Date < DateTime.UtcNow.Date || rental.EndDate.Date <= rental.StartDate.Date)
+            throw new InvalidOperationException("A rental must start today or later and end at least one day after it starts.");
+
+        await using var transaction = db.Database.IsInMemory()
+            ? null
+            : await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
         var car = await db.Cars.FirstOrDefaultAsync(c => c.Id == rental.CarId)
                   ?? throw new InvalidOperationException($"Car {rental.CarId} does not exist.");
+
+        if (car.Status != CarStatus.Available)
+            throw new DomainConflictException("This car is no longer available for booking.");
+
+        // Repeat the check inside the write transaction. The controller check is
+        // useful for fast feedback, but cannot protect against two simultaneous requests.
+        if (await HasOverlappingRentalAsync(rental.CarId, rental.StartDate, rental.EndDate))
+            throw new DomainConflictException("This car is already reserved for part of the selected period.");
 
         rental.Status = RentalStatus.Active;
         rental.CreatedAt = DateTime.UtcNow;
@@ -58,8 +75,9 @@ public class RentalRepository(ApplicationDbContext db) : IRentalRepository
         db.Rentals.Add(rental);
         car.Status = CarStatus.Rented;
 
-        // Single SaveChanges => insert + status update commit or fail together.
         await db.SaveChangesAsync();
+        if (transaction is not null)
+            await transaction.CommitAsync();
 
         return rental;
     }
@@ -72,6 +90,14 @@ public class RentalRepository(ApplicationDbContext db) : IRentalRepository
         if (existing is null) return null;
 
         var previousStatus = existing.Status;
+        var resultingStatus = newStatus ?? existing.Status;
+        if (!RentalStatus.IsValid(resultingStatus))
+            throw new InvalidOperationException($"Unknown rental status '{resultingStatus}'.");
+        if (startDate.Date < DateTime.UtcNow.Date || endDate.Date <= startDate.Date)
+            throw new InvalidOperationException("A rental must start today or later and end at least one day after it starts.");
+        if (RentalStatus.IsOpen(resultingStatus)
+            && await HasOverlappingRentalAsync(existing.CarId, startDate, endDate, excludeRentalId: id))
+            throw new DomainConflictException("Another active rental overlaps the requested period.");
 
         existing.StartDate = startDate;
         existing.EndDate = endDate;

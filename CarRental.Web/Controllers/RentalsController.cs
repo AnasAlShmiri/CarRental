@@ -1,4 +1,5 @@
 using CarRental.Application.Interfaces;
+using CarRental.Domain.Exceptions;
 using CarRental.Domain.Models;
 using CarRental.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -102,13 +103,24 @@ public class RentalsController(
             return View(model);
         }
 
-        await rentalRepo.CreateAsync(new Rental
+        try
         {
-            CarId = model.CarId,
-            CustomerId = model.CustomerId,
-            StartDate = model.StartDate,
-            EndDate = model.EndDate
-        });
+            await rentalRepo.CreateAsync(new Rental
+            {
+                CarId = model.CarId,
+                CustomerId = model.CustomerId,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate
+            });
+        }
+        catch (DomainConflictException ex)
+        {
+            ModelState.AddModelError(nameof(RentalViewModel.CarId),
+                ex.Message.Contains("already reserved", StringComparison.OrdinalIgnoreCase)
+                    ? "السيارة حُجزت للتو خلال هذه الفترة — اختر فترة أخرى أو سيارة أخرى"
+                    : "السيارة لم تعد متاحة للحجز — حدّث الصفحة واختر سيارة أخرى");
+            return View(model);
+        }
 
         TempData["SuccessMessage"] = "تم إنشاء الحجز بنجاح وخصم السيارة من الكتالوج";
         return RedirectToAction("Index");

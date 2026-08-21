@@ -1,225 +1,291 @@
-# CarRental API
+# CarRental — نظام إدارة تأجير السيارات
 
-نظام إدارة تأجير السيارات — الواجهة الخلفية (ASP.NET Core Web API) ببنية **Clean Architecture** و **Repository Pattern**.
+نظام **Full-Stack** لإدارة تأجير السيارات، يتكون من لوحة إدارة عربية RTL مبنية بـ ASP.NET Core MVC، وواجهة Web API محمية بـ JWT، وتطبيق Flutter مخصص للعميل. يعتمد المشروع على قاعدة SQLite مشتركة في جذر المستودع حتى ترى لوحة الإدارة وواجهة API وتطبيق الجوال البيانات نفسها عند التشغيل المحلي.
 
-| البند | التقنية |
+> هذا المستودع يستهدف .NET 10 وFlutter 3.35 أو أحدث. تشغيل API وMVC محليًا لا يحتاج إلى متغيرات بيئية يدوية؛ ملفات Windows الموجودة في الجذر تهيئ التشغيل المحلي تلقائيًا.
+
+## المكونات
+
+| المكوّن | الوظيفة | التقنية |
+|---|---|---|
+| `CarRental.API` | API للمصادقة والكتالوج والعملاء والحجوزات والإحصائيات والصور | ASP.NET Core Web API 10 + JWT |
+| `CarRental.Web` | لوحة الإدارة وإدارة السيارات والعملاء والحجوزات والإحصائيات | ASP.NET Core MVC 10 + Cookie Authentication |
+| `CarRental.Mobile` | تطبيق العميل للتسجيل وتصفح السيارات والحجز وإدارة الحجوزات والملف الشخصي | Flutter |
+| `CarRental.Domain` | الكيانات وقواعد النطاق والحالات | .NET Class Library |
+| `CarRental.Application` | DTOs والعقود وعمليات التحويل | .NET Class Library |
+| `CarRental.Infrastructure` | EF Core وSQLite والمستودعات والتخزين المحلي وJWT | EF Core 10 |
+
+يُحافظ المشروع على اسم الخاصية `CarModel` في `CarRental.Web/Models/CarViewModel.cs` لأنه جزء من عقد لوحة MVC الحالي.
+
+## البنية
+
+```text
+CarRental/
+├── CarRental.API/             # Web API على المنفذ 5109
+├── CarRental.Web/             # لوحة الإدارة على المنفذ 5110
+├── CarRental.Mobile/          # تطبيق Flutter للعميل
+├── CarRental.Domain/          # Domain models and exceptions
+├── CarRental.Application/     # DTOs, interfaces, mappings
+├── CarRental.Infrastructure/  # DbContext, repositories, storage, auth
+├── tests/test_api.sh          # اختبارات HTTP شاملة
+├── docs/professional_audit.md # سجل التدقيق والإصلاحات
+├── Run-CarRental.cmd          # تشغيل API ثم MVC وفتح المتصفح
+├── Run-API.cmd                # تشغيل API فقط
+├── Run-MVC.cmd                # تشغيل لوحة MVC فقط
+└── Run-Mobile.cmd             # تشغيل تطبيق Flutter
+```
+
+## المتطلبات
+
+يحتاج تشغيل الواجهة الخلفية إلى **.NET SDK 10**. يحتاج تطبيق الجوال إلى **Flutter SDK** مع جهاز أو محاكي متصل. في Windows يجب تثبيت Visual Studio أو .NET SDK مع أدوات ASP.NET Core، وفي Android يجب تفعيل Android SDK أو استخدام جهاز Android متصل بوضع التصحيح.
+
+لا يحتاج التشغيل المحلي إلى SQL Server؛ فالإعداد الافتراضي هو SQLite. لا تُرفع قاعدة `car-rental.db` إلى GitHub، فهي ملف تشغيل محلي وموجود في `.gitignore`.
+
+## التشغيل السريع على Windows
+
+بعد استنساخ المستودع، افتح PowerShell داخل مجلد `CarRental` وتأكد أن الملفات `Run-CarRental.cmd` و`Run-API.cmd` و`Run-MVC.cmd` موجودة في **جذر المستودع**. شغّل السكربت من PowerShell بالطريقة التالية:
+
+```powershell
+cd C:\path\to\CarRental
+.\Run-CarRental.cmd
+```
+
+يشغّل السكربت API على `http://localhost:5109`، ينتظر أن تصبح نقطة `/health` جاهزة، ثم يشغّل لوحة MVC على `http://localhost:5110` ويفتح المتصفح. إذا لم يتعرف Windows على `dotnet` فتأكد من تثبيت .NET SDK وإعادة فتح PowerShell. لا تستخدم `.Run-CarRental.cmd`؛ الصيغة الصحيحة هي ` .\Run-CarRental.cmd` كما في المثال، مع حذف المسافة الموجودة قبل الأمر عند النسخ.
+
+للتشغيل المنفصل:
+
+```powershell
+.\Run-API.cmd
+.\Run-MVC.cmd
+```
+
+يجب تشغيل API قبل MVC لأن لوحة الإدارة ترسل طلباتها إلى API. لا تفتح نسخة ثانية من API على المنفذ نفسه؛ إذا ظهر خطأ `address already in use` أغلق النسخة القديمة أو أعد تشغيل الجهاز ثم شغّل السكربت مرة واحدة.
+
+## التشغيل من Visual Studio
+
+افتح `CarRental.slnx` في Visual Studio الذي يدعم .NET 10، ثم اختر مشروع `CarRental.Web` كمشروع التشغيل. شغّل API أولًا أو استخدم ملف `Run-CarRental.cmd` خارج Visual Studio لضمان ترتيب التشغيل. يمكن أيضًا تشغيل المشروعين معًا من إعدادات **Multiple startup projects**، مع تشغيل `CarRental.API` قبل `CarRental.Web`.
+
+بعد التشغيل افتح لوحة الإدارة على:
+
+```text
+http://localhost:5110
+```
+
+وتتوفر Swagger على:
+
+```text
+http://localhost:5109/swagger
+```
+
+وفحص الجاهزية على:
+
+```text
+http://localhost:5109/health
+```
+
+## قاعدة البيانات والمسار المشترك
+
+الافتراضي هو:
+
+```text
+Data Source=../car-rental.db
+```
+
+يُحوّل `DatabasePathResolver` هذه القيمة إلى ملف مطلق في جذر المستودع، لذلك تستخدم API وMVC قاعدة SQLite نفسها حتى عند بدء التشغيل من مجلدات مختلفة. عند أول تشغيل تُنشأ الجداول تلقائيًا، وتُطبق ترقية توافق SQLite لإضافة الأعمدة المطلوبة دون حذف البيانات. كما تُستخدم إعدادات `WAL` و`foreign_keys` و`busy_timeout` لتحسين تحمل الإيقاف المفاجئ وتقليل تعارضات الكتابة.
+
+يمكن تشغيل الاختبارات على قاعدة مؤقتة بدل قاعدة التطوير:
+
+```powershell
+$env:DatabaseProvider = "Sqlite"
+$env:ConnectionStrings__DefaultConnection = "Data Source=C:\Temp\carrental-test.db"
+dotnet run --project CarRental.API\CarRental.API.csproj --no-launch-profile
+```
+
+في بيئة الإنتاج يجب استخدام إعدادات أسرار آمنة وقاعدة مدارة أو مسار تخزين دائم. لا تعتمد على ملف SQLite داخل مجلد مؤقت أو على النسخ الموجودة داخل `CarRental.API` أو `CarRental.Web`.
+
+## حسابات المستخدمين والمصادقة
+
+هناك نوعان منفصلان من الحسابات:
+
+| النوع | مكان الاستخدام | الآلية |
+|---|---|---|
+| Admin | لوحة MVC وإدارة السيارات والعملاء والحجوزات والإحصائيات | Cookie في MVC وJWT عند استدعاء API |
+| Customer | تطبيق Flutter وموارد العميل الذاتية | JWT مع `customer_id` وRole=`Customer` |
+
+تسجيل العميل ودخوله:
+
+```text
+POST /api/customer-auth/register
+POST /api/customer-auth/login
+GET  /api/customer-auth/me
+PUT  /api/customer-auth/me
+```
+
+لا يستطيع العميل الوصول إلى مسارات الإدارة، ولا يستطيع المدير استخدام مسارات ملف العميل الذاتية. يأخذ API هوية العميل من مطالبة JWT ولا يثق بمعرف عميل يرسله المستخدم في مساراته الذاتية.
+
+إعدادات التطوير المحلية موجودة في `appsettings.Development.json` ولا يجب نسخها إلى بيئة إنتاج. في بيئة غير Development يرفض API التشغيل إذا كان مفتاح JWT مفقودًا أو قصيرًا أو افتراضيًا، أو إذا بقيت كلمة مرور المدير الافتراضية. يجب توفير القيم عبر Secret Manager أو متغيرات البيئة، مثل `Jwt__Key` و`AdminUser__Password`.
+
+مسارات المصادقة محددة المعدل. عند تجاوز الحد يعيد API `429 Too Many Requests` بصيغة ProblemDetails بدل السماح بمحاولات تخمين غير محدودة.
+
+## لوحة الإدارة MVC
+
+لوحة الإدارة عربية RTL وبتصميم Premium Luxury، وتوفر إدارة السيارات والعملاء والحجوزات والإحصائيات. عمليات الإنشاء والتعديل والحذف محمية بالمصادقة والتفويض، وتتحقق من السعر والحالة والهاتف والبريد قبل إرسال الطلب. تعرض اللوحة تعارضات الحجز ورسائل أخطاء API بصورة مفهومة، وتتعامل مع انتهاء جلسة الإدارة بدل عرض خطأ عام للمستخدم.
+
+للدخول المحلي، استخدم بيانات التطوير الموجودة في `CarRental.API/appsettings.Development.json` فقط. لا تظهر كلمة المرور في صفحة الدخول أو في README ولا ينبغي استخدام بيانات التطوير خارج الجهاز المحلي.
+
+## تطبيق Flutter للعميل
+
+تطبيق Flutter ليس لوحة إدارة. وظيفته هي تجربة العميل الكاملة:
+
+1. إنشاء حساب عميل بالبريد الإلكتروني والهاتف وكلمة مرور قوية.
+2. تسجيل الدخول واستعادة جلسة العميل من التخزين المحلي.
+3. عرض السيارات المتاحة والصور التي ترفعها لوحة MVC عبر API.
+4. إنشاء حجز مع اختيار فترة الإيجار، بينما يحسب الخادم السعر النهائي.
+5. عرض حجوزات العميل الحالي فقط وإلغاء الحجز.
+6. عرض وتحديث ملف العميل.
+7. تحويل أخطاء API وProblemDetails إلى رسائل عربية واضحة.
+8. حذف جلسة JWT محليًا عند استجابة `401` حتى لا تستمر الطلبات باستخدام جلسة منتهية.
+
+عنوان API مضبوط مركزيًا في `CarRental.Mobile/lib/core/api_config.dart`:
+
+| بيئة Flutter | العنوان الافتراضي |
 |---|---|
-| الإطار | ASP.NET Core **net10.0** |
-| قاعدة البيانات | SQL Server + Entity Framework Core 10 |
-| التوثيق | Swagger / OpenAPI (Swashbuckle) |
-| المصادقة | JWT Bearer |
-| ملف الحل | `CarRental.slnx` — بما أن المشروع يستهدف net10.0 فهو يتطلب **.NET SDK 10** (صيغة slnx نفسها مدعومة من SDK 9.0.200 فما فوق) |
+| Android Emulator | `http://10.0.2.2:5109` |
+| Flutter Web أو Windows | `http://localhost:5109` |
+| هاتف فعلي | ضع عنوان LAN للحاسوب في `physicalDeviceBaseUrl` مثل `http://192.168.1.5:5109` |
 
----
+لتشغيل التطبيق:
 
-## 1. بنية المشروع
-
-```
-CarRental.slnx
-├── CarRental.Domain          # الكيانات وثوابت الحالات (لا يعتمد على أي طبقة)
-│   └── Models/               Car, Customer, Rental, CarStatus, RentalStatus
-├── CarRental.Application     # العقود و DTOs (يعتمد على Domain فقط)
-│   ├── DTOs/                 Create/Update/Read DTOs + Auth DTOs
-│   ├── Interfaces/           ICarRepository, ICustomerRepository, IRentalRepository, ITokenService
-│   └── Mapping/              تحويل الكيانات إلى DTOs
-├── CarRental.Infrastructure  # الوصول للبيانات والخدمات
-│   ├── Data/                 ApplicationDbContext
-│   ├── Migrations/           مُهاجَرات EF (خاصة بـ SQL Server)
-│   ├── Repositories/         التنفيذ الفعلي للمستودعات
-│   ├── Auth/                 JwtSettings, AdminUserSettings
-│   └── Services/             TokenService
-└── CarRental.API             # نقطة الدخول
-    ├── Controllers/          Auth, Cars, Customers, Rentals
-    ├── Errors/               GlobalExceptionHandler
-    └── wwwroot/uploads/      صور السيارات
+```powershell
+cd C:\path\to\CarRental
+.\Run-API.cmd
+.\Run-Mobile.cmd
 ```
 
----
+أو يدويًا:
 
-## 2. التشغيل
-
-```bash
-# 1) تحديث قاعدة البيانات (مطلوب — هناك مُهاجَرة جديدة أضافت عمود ImageUrl)
-dotnet ef database update --project CarRental.Infrastructure --startup-project CarRental.API
-
-# 2) التشغيل
-dotnet run --project CarRental.API
+```powershell
+cd CarRental.Mobile
+flutter pub get
+flutter run
 ```
 
-ثم افتح **Swagger** على: `http://localhost:5109/swagger`
+يجب أن يكون الهاتف أو المحاكي قادرًا على الوصول إلى الحاسوب عبر الشبكة، وأن يسمح جدار Windows الناري بالاتصال بالمنفذ `5109` عند استخدام هاتف فعلي. عند إضافة سيارة من لوحة MVC، تُحفظ الصورة في مجلد `CarRental.Web/wwwroot/uploads` ويقدمها API من المسار نفسه لتظهر في Flutter.
 
-> **مهم:** لا تنسَ الخطوة الأولى. أُضيفت مُهاجَرة `AddCarImageUrlAndIndexes`، وبدون تطبيقها ستفشل عمليات السيارات.
-
-### فحص الجاهزية
-`GET /health`
-
----
-
-## 3. المصادقة (JWT)
-
-معظم عمليات القراءة العامة للسيارات مفتوحة، أما الإدارة فتحتاج رمزاً.
-
-```bash
-POST /api/auth/login
-{ "username": "admin", "password": "Admin@12345" }
-```
-
-الاستجابة تحتوي على `token` — أرسله في كل طلب محمي:
-
-```
-Authorization: Bearer <token>
-```
-
-في Swagger اضغط زر **Authorize** والصق الرمز.
-
-> ⚠️ **قبل التسليم أو النشر:** غيّر `Jwt:Key` و `AdminUser:Password` في `appsettings.json`.
-> الأفضل استخدام `dotnet user-secrets` أو متغيّرات البيئة (`Jwt__Key`) بدلاً من وضعها في الكود.
-> الحساب الحالي مُخزَّن في الإعدادات لتبسيط المشروع الدراسي؛ النظام الحقيقي يحتاج جدول مستخدمين بكلمات مرور مُشفَّرة (hashed).
-
-### مستوى الحماية لكل نقطة
-
-| النقاط | الحماية |
-|---|---|
-| `GET /api/cars`, `/api/cars/available`, `/api/cars/{id}` | مفتوحة (كتالوج عام للتطبيق) |
-| `POST /api/rentals` · `GET /api/rentals/customer/{id}` | مفتوحة (العميل يحجز ويرى إيجاراته — التطبيق بلا تسجيل دخول) |
-| باقي عمليات السيارات والإيجارات | تحتاج رمزاً |
-| **كل** عمليات العملاء | تحتاج رمزاً (بيانات شخصية) |
-
----
-
-## 4. نقاط النهاية (Endpoints)
+## أهم نقاط API
 
 ### السيارات
-| الطريقة | المسار | الوصف |
-|---|---|---|
-| GET | `/api/cars` | الكل، مع فلترة اختيارية `?status=` |
-| GET | `/api/cars/available` | المتاحة للتأجير فقط |
-| GET | `/api/cars/{id}` | سيارة واحدة |
-| POST | `/api/cars` | إضافة — **نموذج multipart واحد: البيانات + الصورة معاً**، حقل `image` اختياري |
-| PUT | `/api/cars/{id}` | تعديل — اترك `status` فارغاً للحفاظ على الحالة، واترك `image` فارغاً للحفاظ على الصورة، و`removeImage=true` لإزالتها |
-| DELETE | `/api/cars/{id}` | حذف (409 إذا لها إيجارات) — يحذف ملف الصورة أيضاً |
+
+| الطريقة | المسار | الحماية | الوصف |
+|---|---|---|---|
+| `GET` | `/api/cars` | عام | كتالوج السيارات مع فلترة اختيارية |
+| `GET` | `/api/cars/available` | عام | السيارات المتاحة |
+| `GET` | `/api/cars/{id}` | عام | سيارة واحدة |
+| `POST` | `/api/cars` | Admin | إضافة سيارة وصورة اختيارية بصيغة multipart |
+| `PUT` | `/api/cars/{id}` | Admin | تعديل سيارة أو استبدال/إزالة الصورة |
+| `DELETE` | `/api/cars/{id}` | Admin | حذف السيارة إذا لم تمنعه علاقة إيجار |
 
 ### العملاء
-| الطريقة | المسار |
-|---|---|
-| GET | `/api/customers` · `/api/customers/{id}` |
-| POST | `/api/customers` |
-| PUT | `/api/customers/{id}` |
-| DELETE | `/api/customers/{id}` |
 
-### الإيجارات
-| الطريقة | المسار | الوصف |
-|---|---|---|
-| GET | `/api/rentals` | الكل |
-| GET | `/api/rentals/customer/{customerId}` | سجل عميل — **مفتوحة** (شاشة «إيجاراتي» في التطبيق بلا تسجيل دخول) |
-| GET | `/api/rentals/{id}` | إيجار واحد |
-| POST | `/api/rentals` | حجز (السعر يُحسب في الخادم) |
-| PUT | `/api/rentals/{id}` | تعديل الفترة |
-| PUT | `/api/rentals/{id}/complete` | **إكمال — يُحرِّر السيارة** |
-| PUT | `/api/rentals/{id}/cancel` | **إلغاء — يُحرِّر السيارة** |
-| DELETE | `/api/rentals/{id}` | حذف (يُحرِّر السيارة) |
+| الطريقة | المسار | الحماية | الوصف |
+|---|---|---|---|
+| `GET` | `/api/customers` | Admin | قائمة العملاء |
+| `GET` | `/api/customers/{id}` | Admin | بيانات عميل |
+| `POST` | `/api/customers` | Admin | إنشاء عميل من لوحة الإدارة |
+| `PUT` | `/api/customers/{id}` | Admin | تعديل بيانات عميل |
+| `DELETE` | `/api/customers/{id}` | Admin | حذف عميل عند عدم وجود علاقات مانعة |
+| `POST` | `/api/customer-auth/register` | عام | تسجيل عميل جديد |
+| `POST` | `/api/customer-auth/login` | عام | دخول العميل |
+| `GET` | `/api/customer-auth/me` | Customer | الملف الشخصي للعميل الحالي |
+| `PUT` | `/api/customer-auth/me` | Customer | تعديل الملف الشخصي |
 
-### الإحصائيات (للوحة التحكم)
-| الطريقة | المسار | الوصف |
-|---|---|---|
-| GET | `/api/statistics?months=6` | أرقام اللوحة: الأسطول، العملاء، الإيجارات، الإيراد الكلي، وسلسلة الإيراد الشهري للرسوم البيانية |
+### الحجوزات
 
-### الحالات المسموحة
-- **السيارة:** `Available` · `Rented` · `UnderMaintenance`
-- **الإيجار:** `Active` · `Completed` · `Cancelled`
+| الطريقة | المسار | الحماية | الوصف |
+|---|---|---|---|
+| `GET` | `/api/rentals` | Admin | جميع الحجوزات |
+| `GET` | `/api/rentals/{id}` | Admin | حجز واحد |
+| `POST` | `/api/customer/rentals` | Customer | إنشاء حجز للعميل المصادق عليه |
+| `GET` | `/api/customer/rentals` | Customer | حجوزات العميل الحالي فقط |
+| `POST` | `/api/customer/rentals/{id}/cancel` | Customer | إلغاء حجز العميل الحالي |
+| `POST` | `/api/rentals` | Admin | إنشاء حجز إداري من لوحة الإدارة |
+| `PUT` | `/api/rentals/{id}` | Admin | تعديل فترة الحجز الإداري |
+| `PUT` | `/api/rentals/{id}/complete` | Admin | إكمال الحجز وتحرير السيارة |
+| `PUT` | `/api/rentals/{id}/cancel` | Admin | إلغاء الحجز وتحرير السيارة |
+| `DELETE` | `/api/rentals/{id}` | Admin | حذف الحجز |
 
----
+`totalPrice` يحسبه الخادم دائمًا. تبدأ التواريخ من يوم UTC كامل، ولا يسمح النظام بتاريخ بداية ماضٍ أو بفترة نهاية غير صحيحة أو بتداخل حجزين نشطين للسيارة نفسها. تعارض التوافر يعيد `409 Conflict` بدل استجابة `500` غامضة.
 
-## 5. قواعد العمل المُطبَّقة
+### الإحصائيات والصور
 
-- `TotalPrice` **يُحسب في الخادم دائماً** (`PricePerDay × عدد الأيام`، بحد أدنى يوم واحد) — العميل لا يستطيع تحديد السعر.
-- لا يمكن الحجز بتاريخ بداية في الماضي.
-- `EndDate` يجب أن يكون بعد `StartDate` بيوم على الأقل.
-- لا يمكن حجز سيارة بفترة تتعارض مع إيجار نشط آخر لنفس السيارة.
-- لا يمكن تأجير سيارة حالتها `UnderMaintenance`.
-- عند الحجز: إنشاء الإيجار وتغيير حالة السيارة يحدثان في **معاملة واحدة** (`SaveChanges` واحد).
-- عند الإكمال/الإلغاء/الحذف: تُعاد السيارة إلى `Available` **فقط** إذا لم يبق إيجار نشط آخر عليها، ولا تُلمس إن كانت `UnderMaintenance`.
-- الحذف محمي بالعلاقات: 409 مع سبب واضح بدلاً من خطأ 500.
-- **صور السيارات:** تُرفع من الجهاز في نفس نموذج الإضافة/التعديل (Swagger يعرض زر اختيار ملف). الأنواع: jpg/jpeg/png/gif/webp حتى 5MB، والنوع الحقيقي يُفحص من بايتات الملف لا من الامتداد. الملفات تُحفظ في `wwwroot/uploads/` باسم مُولَّد آمن، وتُحذف تلقائياً عند الاستبدال أو الإزالة أو حذف السيارة.
-
----
-
-## 6. تبديل مزوّد قاعدة البيانات
-
-المزوّد الافتراضي **SQL Server**. يمكن تغييره للاختبار على أجهزة لا تتوفر فيها:
-
-```json
-{ "DatabaseProvider": "SqlServer" }   // SqlServer | Sqlite | InMemory
+```text
+GET /api/statistics?months=6       # Admin
+GET /uploads/{fileName}            # صورة سيارة عامة عبر API
 ```
 
-أو عبر متغيّرات البيئة:
+تقبل صور السيارات `jpg` و`jpeg` و`png` و`gif` و`webp` حتى 5MB، ويُفحص نوع الملف من محتواه الفعلي لا من الامتداد وحده. يستخدم API ومجلد MVC مسار الصور المشترك نفسه.
 
-```bash
-DatabaseProvider=Sqlite \
-ConnectionStrings__DefaultConnection="Data Source=carrental.db" \
-dotnet run --project CarRental.API
-```
+## التحقق ومعالجة الأخطاء
 
-**ملاحظة مهمة:** المُهاجَرات في `Migrations/` مُولَّدة لـ SQL Server. لذلك يُطبِّق المشروع
-`Migrate()` على SQL Server فقط، ويستخدم `EnsureCreated()` مع المزوّدات البديلة —
-لأن إعادة تشغيل مُهاجَرات SQL Server على SQLite تُطلق تحذير
-`PendingModelChangesWarning` كاذباً بسبب اختلاف تحويل الأنواع بين المزوّدات.
+تستخدم DTOs قواعد تحقق للحقول النصية والبريد والهاتف والسعر والتاريخ والحالات المسموحة. كلمة مرور العميل يجب أن تحقق طولًا أدنى، وتحتوي على أحرف كبيرة وصغيرة ورقم ورمز، ولا تقبل المسافات أو القيم الضعيفة وفق القاعدة المشتركة بين API وFlutter.
 
----
-
-## 7. CORS
-
-للسماح لتطبيق Flutter ولوحة التحكم بالاتصال، حدّد النطاقات في `appsettings.json`:
-
-```json
-{ "Cors": { "AllowedOrigins": [ "https://localhost:7001", "http://localhost:3000" ] } }
-```
-
-إذا تُركت القائمة فارغة يُسمح لأي نطاق (مناسب للتطوير فقط — قيّدها قبل النشر).
-
----
-
-## 8. معالجة الأخطاء
-
-كل الاستجابات الخطأ بصيغة **ProblemDetails** (RFC 7807):
+كل أخطاء API المهمة تستخدم صيغة ProblemDetails أو ValidationProblemDetails:
 
 | الحالة | المعنى |
 |---|---|
-| 400 | مدخلات غير صحيحة |
-| 401 | رمز مفقود أو غير صالح |
-| 404 | المورد غير موجود |
-| 409 | تعارض (بريد مكرر، تعارض تواريخ، حذف ممنوع بعلاقة) |
-| 503 | قاعدة البيانات غير متاحة |
+| `400` | مدخلات غير صحيحة |
+| `401` | رمز مفقود أو منتهي أو غير صالح |
+| `403` | الدور لا يملك الصلاحية |
+| `404` | المورد غير موجود |
+| `409` | تعارض بريد أو حجز أو علاقة حذف |
+| `429` | تجاوز معدل المصادقة |
+| `503` | عدم توفر قاعدة البيانات أو مورد تابع |
 
-إذا تعذّر الوصول لقاعدة البيانات عند بدء التشغيل فإن التطبيق **يبدأ ويُسجّل الخطأ**
-بدلاً من الانهيار، حتى يظهر السبب بوضوح.
+## الاختبارات
 
----
+تشغيل اختبارات API من PowerShell بعد تشغيل API:
 
-## 9. توثيق Postman
-
-مجموعة Postman كاملة في: `docs/CarRental.postman_collection.json`
-
-- استوردها في Postman: **Import** ← اختر الملف.
-- نفّذ طلب **Auth → Login** أولاً — سكربت الاختبار فيه يحفظ الرمز تلقائياً في متغيّر `{{token}}`، وكل الطلبات المحمية تستخدمه مباشرة.
-- طلبات السيارات جاهزة بصيغة form-data — اختر الصورة من **Body → form-data → image → Select Files**.
-
----
-
-## 10. الاختبار
-
-يوجد سكربت اختبار شامل يضرب كل نقطة نهاية بطلبات HTTP حقيقية ويتحقق من رموز الحالة
-ومن قواعد العمل: `tests/test_api.sh`
-
-```bash
-# نافذة 1
-DatabaseProvider=Sqlite \
-ConnectionStrings__DefaultConnection="Data Source=/tmp/carrental_test.db" \
-ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS="http://127.0.0.1:5109" \
-dotnet run --project CarRental.API
-
-# نافذة 2
-./tests/test_api.sh
+```powershell
+bash tests/test_api.sh
+python3 /tmp/test_customer_flow.py
+python3 /tmp/test_role_boundaries.py
 ```
 
-آخر نتيجة: **101 اختبار ناجح، 0 فاشل.**
+تشغيل اختبارات Flutter:
+
+```powershell
+cd CarRental.Mobile
+flutter analyze --no-fatal-infos --no-fatal-warnings
+flutter test
+```
+
+آخر بوابة جودة موثقة في هذا الفرع:
+
+| الفحص | النتيجة |
+|---|---|
+| بناء API وMVC | ناجح دون أخطاء ترجمة |
+| Flutter analyze | ناجح دون أخطاء |
+| Flutter test | جميع الاختبارات الحالية ناجحة |
+| اختبار API الشامل | **126 ناجحًا، 0 فاشل** |
+| رحلة تسجيل العميل والحجز والإلغاء | ناجحة |
+| حدود أدوار Customer وAdmin | ناجحة |
+
+التفاصيل والمخاطر المتبقية موثقة في [`docs/professional_audit.md`](docs/professional_audit.md).
+
+## Git workflow
+
+الفرع الحالي للتعديلات هو `fix/portable-windows-config`، وPull Request رقم `#8` مفتوح باتجاه `mvc-dashboard`. بعد مراجعة التغييرات محليًا:
+
+```bash
+git status
+git diff --stat
+git add -A
+git commit -m "fix: professional quality improvements"
+git push origin fix/portable-windows-config
+```
+
+لا ترفع `car-rental.db` أو ملفات الأسرار أو مجلدات build. لا تستخدم `appsettings.Development.json` كإعداد إنتاج. قبل الدمج النهائي راجع أن Pull Request رقم `#8` يحتوي آخر commit وأن الاختبارات المذكورة أعلاه مرت من قاعدة SQLite مؤقتة نظيفة.
+
+## حدود النشر الحقيقي
+
+الإعداد الحالي مناسب لتشغيل محلي أو مشروع دراسي متكامل. قبل النشر العام يجب استخدام مفتاح JWT طويل وسري، تغيير كلمة مرور المدير، تقييد CORS إلى نطاقات معروفة، استخدام تخزين صور دائم وآمن، إضافة نظام مستخدمي إدارة متعدد الحسابات مع كلمات مرور مجزأة، وتوفير نسخ احتياطية لقاعدة البيانات ومراقبة تشغيلية. لا تعتبر قيم `appsettings.Development.json` أسرار نشر.

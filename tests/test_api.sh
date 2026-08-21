@@ -221,7 +221,7 @@ check "Update customer to taken email -> 409" 409
 
 # ---- 5. THE BIG ONE: car update must not release a rented car ---------------
 section "5. BUG#2 — price edit must NOT release a rented car"
-req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "Create rental -> 201" 201
 RENT1=$(jqv "['id']")
 assert_json "Rental status Active"           "['status']" "Active"
@@ -242,19 +242,19 @@ check "Update car with invalid status -> 400" 400
 
 # ---- 6. rental creation validation ------------------------------------------
 section "6. BUG#4/#11 — rental input validation"
-req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":999999,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":999999,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "BUG#4 nonexistent customer -> 404 (was 500)" 404
-req POST /api/rentals "{\"carId\":999999,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":999999,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "Nonexistent car -> 404" 404
-req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$NEXTWEEK\",\"endDate\":\"$TOMORROW\"}"
+req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$NEXTWEEK\",\"endDate\":\"$TOMORROW\"}" "$TOKEN"
 check "EndDate before StartDate -> 400" 400
-req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$TOMORROW\"}"
+req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$TOMORROW\"}" "$TOKEN"
 check "Same-day rental -> 400" 400
-req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$YESTERDAY\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$YESTERDAY\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "BUG#11 past StartDate -> 400 (was allowed)" 400
-req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST2,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST2,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "Double-book same car/dates -> 409" 409
-req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":0,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":0,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "CustomerId 0 -> 400 (range validation)" 400
 
 # ---- 7. rental update must not zero the price -------------------------------
@@ -283,7 +283,7 @@ req PUT /api/rentals/999999/complete "" "$TOKEN"
 check "Complete missing rental -> 404" 404
 
 # car should be rentable again now
-req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST2,\"startDate\":\"$LATER\",\"endDate\":\"$LATER_END\"}"
+req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST2,\"startDate\":\"$LATER\",\"endDate\":\"$LATER_END\"}" "$TOKEN"
 check "Re-rent the released car -> 201" 201
 RENT2=$(jqv "['id']")
 
@@ -300,7 +300,7 @@ check "Delete missing rental -> 404" 404
 
 # ---- 10. relationship-protected deletes ------------------------------------
 section "10. BUG#8/#10 — relationship-aware deletes"
-req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR2,\"customerId\":$CUST1,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "Create rental on car2 -> 201" 201
 RENT3=$(jqv "['id']")
 
@@ -331,7 +331,7 @@ CAR4=$(jqv "['id']")
 reqform PUT "/api/cars/$CAR4" "$TOKEN" model=Yaris brand=Toyota pricePerDay=90 status=UnderMaintenance
 check "Set car to UnderMaintenance -> 200" 200
 assert_json "Status is UnderMaintenance"     "['status']" "UnderMaintenance"
-req POST /api/rentals "{\"carId\":$CAR4,\"customerId\":$CUST2,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}"
+req POST /api/rentals "{\"carId\":$CAR4,\"customerId\":$CUST2,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
 check "Rent a car under maintenance -> 409" 409
 req GET "/api/cars?status=UnderMaintenance"; check "Filter by UnderMaintenance -> 200" 200
 
@@ -342,7 +342,7 @@ req GET /api/rentals;                        check "List rentals without token -
 req GET "/api/rentals/customer/$CUST1" "" "$TOKEN"
 check "Rentals by customer -> 200" 200
 req GET "/api/rentals/customer/$CUST1"
-check "Customer history WITHOUT token -> 200 (mobile app)" 200
+check "Customer history WITHOUT token -> 401" 401
 req GET "/api/rentals/customer/999999" "" "$TOKEN"
 check "Rentals for missing customer -> 404" 404
 req GET "/api/rentals/$RENT3" "" "$TOKEN";   check "Get rental by id -> 200" 200

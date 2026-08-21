@@ -64,6 +64,8 @@ public class RentalsController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RentalDto>> Create(RentalCreateDto dto)
     {
+        var start = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(dto.EndDate.Date, DateTimeKind.Utc);
         var car = await carRepo.GetByIdAsync(dto.CarId);
         if (car is null)
             return Problem(
@@ -79,14 +81,14 @@ public class RentalsController(
                 statusCode: StatusCodes.Status404NotFound,
                 title: "Customer not found");
 
-        if (dto.EndDate.Date <= dto.StartDate.Date)
+        if (end <= start)
             return Problem(
                 detail: "EndDate must be at least one day after StartDate.",
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid rental period");
 
         // BUGFIX: rentals could previously be booked in the past.
-        if (dto.StartDate.Date < DateTime.UtcNow.Date)
+        if (start.Date < DateTime.UtcNow.Date)
             return Problem(
                 detail: "StartDate cannot be in the past.",
                 statusCode: StatusCodes.Status400BadRequest,
@@ -100,7 +102,7 @@ public class RentalsController(
 
         // BUGFIX: explicit overlap check. Status alone was not enough to prevent
         // double-booking the same car across two date ranges.
-        if (await rentalRepo.HasOverlappingRentalAsync(dto.CarId, dto.StartDate, dto.EndDate))
+        if (await rentalRepo.HasOverlappingRentalAsync(dto.CarId, start, end))
             return Problem(
                 detail: "This car already has an active rental overlapping those dates.",
                 statusCode: StatusCodes.Status409Conflict,
@@ -116,8 +118,8 @@ public class RentalsController(
         {
             CarId = dto.CarId,
             CustomerId = dto.CustomerId,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate
+            StartDate = start,
+            EndDate = end
         });
 
         // Re-read so the response carries the Car/Customer summaries.
@@ -137,15 +139,23 @@ public class RentalsController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RentalDto>> Update(int id, RentalUpdateDto dto)
     {
+        var start = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(dto.EndDate.Date, DateTimeKind.Utc);
         if (!dto.HasValidStatus())
             return Problem(
                 detail: $"Unknown status '{dto.Status}'. Allowed values: {string.Join(", ", RentalStatus.All)}.",
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid status");
 
-        if (dto.EndDate.Date <= dto.StartDate.Date)
+        if (end <= start)
             return Problem(
                 detail: "EndDate must be at least one day after StartDate.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid rental period");
+
+        if (start.Date < DateTime.UtcNow.Date)
+            return Problem(
+                detail: "StartDate cannot be in the past.",
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid rental period");
 
@@ -157,7 +167,7 @@ public class RentalsController(
                 title: "Not found");
 
         // Don't let an edit push this rental onto another active booking of the same car.
-        if (await rentalRepo.HasOverlappingRentalAsync(existing.CarId, dto.StartDate, dto.EndDate, excludeRentalId: id))
+        if (await rentalRepo.HasOverlappingRentalAsync(existing.CarId, start, end, excludeRentalId: id))
             return Problem(
                 detail: "Another active rental for this car overlaps those dates.",
                 statusCode: StatusCodes.Status409Conflict,
@@ -173,7 +183,7 @@ public class RentalsController(
                 statusCode: StatusCodes.Status409Conflict,
                 title: "Car under maintenance");
 
-        var updated = await rentalRepo.UpdateAsync(id, dto.StartDate, dto.EndDate, dto.Status);
+        var updated = await rentalRepo.UpdateAsync(id, start, end, dto.Status);
         if (updated is null)
             return Problem(
                 detail: $"Rental {id} was not found.",

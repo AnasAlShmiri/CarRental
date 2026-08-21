@@ -46,9 +46,13 @@ public class CustomerRepository(ApplicationDbContext db) : ICustomerRepository
         var existing = await db.Customers.FirstOrDefaultAsync(c => c.Id == id);
         if (existing is null) return null;
 
-        existing.Name = name;
-        existing.Email = email;
-        existing.Phone = phone;
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        if (await EmailExistsAsync(normalizedEmail, excludeCustomerId: id))
+            throw new InvalidOperationException("Another customer already uses this email.");
+
+        existing.Name = name.Trim();
+        existing.Email = normalizedEmail;
+        existing.Phone = phone.Trim();
 
         // CreatedAt intentionally untouched.
         await db.SaveChangesAsync();

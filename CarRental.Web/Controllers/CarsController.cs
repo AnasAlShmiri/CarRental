@@ -52,7 +52,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
     {
         if (!TryParsePrice(model.PricePerDayText, out var price))
             ModelState.AddModelError(nameof(CarViewModel.PricePerDayText),
-                "السعر يجب أن يكون رقمًا صحيحًا بالموجة العشرية (مثال: 150.50)");
+                "السعر يجب أن يكون رقمًا موجبًا بالموجة العشرية (مثال: 150.50)");
 
         if (!ModelState.IsValid)
         {
@@ -126,7 +126,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
 
         if (!TryParsePrice(model.PricePerDayText, out var price))
             ModelState.AddModelError(nameof(CarViewModel.PricePerDayText),
-                "السعر يجب أن يكون رقمًا صحيحًا بالموجة العشرية (مثال: 150.50)");
+                "السعر يجب أن يكون رقمًا موجبًا بالموجة العشرية (مثال: 150.50)");
 
         if (!ModelState.IsValid)
         {
@@ -165,9 +165,17 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
             keepOrOldUrl = model.CurrentImageUrl;
         }
 
-        var status = model.Status is null
+        if (!string.IsNullOrWhiteSpace(model.Status) && !CarStatus.IsValid(model.Status))
+        {
+            ModelState.AddModelError(nameof(CarViewModel.Status),
+                "حالة السيارة غير صالحة. اختر حالة من القائمة المتاحة.");
+            model.Id = id;
+            return View(model);
+        }
+
+        var status = string.IsNullOrWhiteSpace(model.Status)
             ? (await repo.GetByIdAsync(id))?.Status
-            : CarStatus.IsValid(model.Status) ? model.Status : null;
+            : model.Status;
 
         var updated = await repo.UpdateAsync(id,
             model.CarModel.Trim(),
@@ -225,7 +233,7 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
         price = 0m;
         if (string.IsNullOrWhiteSpace(text)) return false;
         return decimal.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out price)
-               && price >= 0m;
+               && price > 0m;
     }
 
     private void ShowModelStateErrors()

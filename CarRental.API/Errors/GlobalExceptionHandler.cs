@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using CarRental.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,9 @@ public class GlobalExceptionHandler(
             (StatusCodes.Status409Conflict,
              "Concurrency conflict",
              "The record was modified by someone else. Reload it and try again."),
+
+        DomainConflictException conflict =>
+            (StatusCodes.Status409Conflict, "Resource conflict", conflict.Message),
 
         DbUpdateException dbEx =>
             (StatusCodes.Status409Conflict,

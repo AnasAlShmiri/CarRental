@@ -26,9 +26,13 @@ public class CustomerRegisterDto
     public string Email { get; set; } = string.Empty;
 
     [Required, MinLength(8), MaxLength(100)]
+    [RegularExpression(
+        @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z\s]).{8,100}$",
+        ErrorMessage = "Password must be 8-100 characters and include upper/lowercase letters, a number, and a symbol.")]
     public string Password { get; set; } = string.Empty;
 
     [MaxLength(20)]
+    [RegularExpression(@"^[0-9+()\-\s]{7,20}$", ErrorMessage = "Phone number format is invalid.")]
     public string Phone { get; set; } = string.Empty;
 }
 
@@ -48,6 +52,7 @@ public class CustomerProfileUpdateDto
     public string Name { get; set; } = string.Empty;
 
     [MaxLength(20)]
+    [RegularExpression(@"^[0-9+()\-\s]{7,20}$", ErrorMessage = "Phone number format is invalid.")]
     public string Phone { get; set; } = string.Empty;
 }
 

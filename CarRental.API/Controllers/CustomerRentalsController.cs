@@ -42,8 +42,10 @@ public class CustomerRentalsController(
         if (customerId is null)
             return Unauthorized();
 
-        var start = dto.StartDate.ToUniversalTime();
-        var end = dto.EndDate.ToUniversalTime();
+        // Rentals are day-based. Strip client time zones and store midnight UTC
+        // so Android, Windows, and API servers interpret the same calendar dates.
+        var start = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(dto.EndDate.Date, DateTimeKind.Utc);
         if (start >= end || start.Date < DateTime.UtcNow.Date)
             return Problem(
                 detail: "The end date must be after the start date, and the start date cannot be in the past.",

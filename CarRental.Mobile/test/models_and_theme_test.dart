@@ -46,7 +46,7 @@ void main() {
   });
 
   testWidgets('سمة التطبيق تستخدم خط Tajawal والألوان المعتمدة', (tester) async {
-    expect(AppTheme.primary, const Color(0xFF1A73E8));
+    expect(AppTheme.primary, const Color(0xFFC69A5B));
     final fontFamily = AppTheme.light.textTheme.bodyMedium?.fontFamily;
     expect(fontFamily, contains('Tajawal'));
     expect(AppTheme.light.brightness, Brightness.light);

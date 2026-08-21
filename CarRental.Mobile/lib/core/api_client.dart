@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
@@ -53,16 +55,54 @@ class ApiClient {
   }
 
   dynamic _decode(http.Response response) {
-    final decoded = response.bodyBytes.isEmpty
-        ? null
-        : jsonDecode(utf8.decode(response.bodyBytes));
+    Object? decoded;
+    try {
+      decoded = response.bodyBytes.isEmpty
+          ? null
+          : jsonDecode(utf8.decode(response.bodyBytes));
+    } on FormatException {
+      decoded = null;
+    }
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final message = decoded is Map<String, dynamic>
-          ? (decoded['detail'] ?? decoded['message'] ?? decoded['title'] ?? 'تعذر تنفيذ الطلب')
-              .toString()
-          : 'تعذر تنفيذ الطلب (${response.statusCode})';
-      throw ApiException(message, statusCode: response.statusCode);
+      throw ApiException(
+        _errorMessage(response.statusCode, decoded),
+        statusCode: response.statusCode,
+      );
     }
     return decoded;
+  }
+
+  String _errorMessage(int statusCode, Object? decoded) {
+    if (statusCode == 401) {
+      unawaited(SessionStore.clear());
+      return 'انتهت جلسة الدخول. سجّل الدخول مرة أخرى.';
+    }
+    if (statusCode == 403) return 'ليس لديك صلاحية لتنفيذ هذا الإجراء.';
+    if (statusCode == 404) return 'العنصر المطلوب غير موجود.';
+    if (statusCode == 408) return 'انتهت مهلة الاتصال بالخادم.';
+    if (statusCode == 429) return 'تم تجاوز عدد المحاولات المسموح بها. انتظر قليلًا ثم حاول مرة أخرى.';
+
+    if (decoded is Map<String, dynamic>) {
+      final errors = decoded['errors'];
+      if (errors is Map) {
+        final messages = <String>[];
+        for (final value in errors.values) {
+          if (value is Iterable) {
+            messages.addAll(value.map((item) => item.toString()));
+          } else if (value != null) {
+            messages.add(value.toString());
+          }
+        }
+        if (messages.isNotEmpty) return messages.toSet().join('\n');
+      }
+
+      for (final key in ['detail', 'message']) {
+        final value = decoded[key];
+        if (value is String && value.trim().isNotEmpty) return value.trim();
+      }
+    }
+
+    return 'تعذر تنفيذ الطلب (${statusCode.toString()}). تحقق من البيانات وحاول مرة أخرى.';
   }
 }

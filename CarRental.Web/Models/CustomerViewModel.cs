@@ -19,7 +19,7 @@ public class CustomerViewModel
 
     [Required(ErrorMessage = "رقم الهاتف مطلوب")]
     [MaxLength(20)]
-    [Phone(ErrorMessage = "رقم هاتف غير صالح")]
+    [RegularExpression(@"^[0-9+()\-\s]{7,20}$", ErrorMessage = "رقم الهاتف يجب أن يحتوي على أرقام ورموز الاتصال فقط وبطول من 7 إلى 20 محرفاً")]
     [Display(Name = "رقم الهاتف")]
     public string Phone { get; set; } = string.Empty;
 

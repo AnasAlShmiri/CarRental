@@ -11,5 +11,6 @@ public class CustomerCreateDto
     public string Email { get; set; } = string.Empty;
 
     [MaxLength(20)]
+    [RegularExpression(@"^[0-9+()\-\s]{7,20}$", ErrorMessage = "Phone number format is invalid.")]
     public string Phone { get; set; } = string.Empty;
 }

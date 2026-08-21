@@ -19,6 +19,19 @@ public static class SqliteSchemaCompatibility
         await db.Database.OpenConnectionAsync(cancellationToken);
         try
         {
+            foreach (var pragma in new[]
+                     {
+                         "PRAGMA foreign_keys = ON;",
+                         "PRAGMA journal_mode = WAL;",
+                         "PRAGMA synchronous = NORMAL;",
+                         "PRAGMA busy_timeout = 5000;"
+                     })
+            {
+                await using var pragmaCommand = db.Database.GetDbConnection().CreateCommand();
+                pragmaCommand.CommandText = pragma;
+                await pragmaCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
             var hasPasswordHash = false;
             await using (var command = db.Database.GetDbConnection().CreateCommand())
             {

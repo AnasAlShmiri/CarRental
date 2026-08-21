@@ -24,6 +24,13 @@ public class CarRepository(ApplicationDbContext db) : ICarRepository
 
     public async Task<Car> CreateAsync(Car car)
     {
+        car.Model = car.Model.Trim();
+        car.Brand = car.Brand.Trim();
+        if (car.Model.Length == 0 || car.Brand.Length == 0)
+            throw new InvalidOperationException("Car model and brand cannot be blank.");
+        if (car.PricePerDay <= 0 || car.PricePerDay > 1_000_000)
+            throw new InvalidOperationException("Car price must be greater than zero and no more than 1,000,000.");
+
         // A new car is always available, and CreatedAt is server-owned.
         car.Status = CarStatus.Available;
         car.CreatedAt = DateTime.UtcNow;
@@ -39,8 +46,15 @@ public class CarRepository(ApplicationDbContext db) : ICarRepository
         var existing = await db.Cars.FirstOrDefaultAsync(c => c.Id == id);
         if (existing is null) return null;
 
-        existing.Model = model;
-        existing.Brand = brand;
+        var normalizedModel = model.Trim();
+        var normalizedBrand = brand.Trim();
+        if (normalizedModel.Length == 0 || normalizedBrand.Length == 0)
+            throw new InvalidOperationException("Car model and brand cannot be blank.");
+        if (pricePerDay <= 0 || pricePerDay > 1_000_000)
+            throw new InvalidOperationException("Car price must be greater than zero and no more than 1,000,000.");
+
+        existing.Model = normalizedModel;
+        existing.Brand = normalizedBrand;
         existing.PricePerDay = pricePerDay;
 
         // BUGFIX: only touch Status when the caller explicitly supplied one.

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Threading.RateLimiting;
 using CarRental.API.Binding;
 using CarRental.API.Errors;
 using CarRental.Application.Interfaces;
@@ -10,6 +11,8 @@ using CarRental.Infrastructure.Repositories;
 using CarRental.Infrastructure.Services;
 using CarRental.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -28,9 +31,13 @@ var builder = WebApplication.CreateBuilder(args);
 // The provider is configurable so the same code can run against SQL Server (default,
 // what you use on Windows) or SQLite/InMemory for testing on machines without SQL Server.
 // Set it via "DatabaseProvider" in appsettings.json or the DatabaseProvider env var.
-var provider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var isSqlServer = provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase);
+if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+    connectionString = DatabasePathResolver.ResolveSqliteConnection(
+        connectionString,
+        builder.Environment.ContentRootPath);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -100,6 +107,33 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// Authentication endpoints are deliberately rate limited per client IP. This is
+// a safety net against password guessing while keeping the normal mobile flow fast.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/problem+json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = StatusCodes.Status429TooManyRequests,
+            Title = "Too many requests",
+            Detail = "Too many authentication attempts. Please try again later."
+        }, cancellationToken: cancellationToken);
+    };
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
+
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // Without this the Flutter app and the MVC dashboard are blocked by the browser.
 const string CorsPolicy = "CarRentalClients";
@@ -110,10 +144,12 @@ builder.Services.AddCors(options =>
     {
         if (allowedOrigins.Length > 0)
             policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
-        else
-            // No origins configured (e.g. local development / mobile clients, which are
-            // not browser-origin bound anyway).
+        else if (builder.Environment.IsDevelopment())
+            // Mobile clients are not browser-origin bound; development remains convenient.
             policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        else
+            throw new InvalidOperationException(
+                "Production requires at least one explicit Cors:AllowedOrigins entry.");
     }));
 
 // ── Error handling ────────────────────────────────────────────────────────────
@@ -127,6 +163,20 @@ builder.Services.AddControllers(options =>
         // 10x price. This binder accepts only "150" / "150.50" and rejects group
         // separators with a clear message. JSON bodies are unaffected.
         options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider()))
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var problem = new ValidationProblemDetails(context.ModelState)
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Request validation failed",
+                Detail = "One or more request fields are invalid.",
+                Instance = context.HttpContext.Request.Path
+            };
+            return new BadRequestObjectResult(problem);
+        };
+    })
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.ReferenceHandler =
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
@@ -151,8 +201,8 @@ builder.Services.AddSwaggerGen(options =>
 
             `{ "username": "admin", "password": "Admin@12345" }`
 
-            That is the development default, stored in `appsettings.json` under
-            `AdminUser`. Change it before deploying.
+            That is the development default, stored in `appsettings.Development.json` under
+            `AdminUser`. Never use it outside local development.
 
             **Step 2** — Copy the `token` value from the response — the long string
             only, without the surrounding quotes.
@@ -168,8 +218,8 @@ builder.Services.AddSwaggerGen(options =>
             * `GET /api/Cars` — the full catalogue
             * `GET /api/Cars/available` — only cars that are free to rent
             * `GET /api/Cars/{id}` — a single car
-            * `POST /api/Rentals` — a customer booking their own rental
-            * `GET /api/Rentals/customer/{customerId}` — a customer's own rental history
+            * `POST /api/customer/rentals` — a signed-in customer creates their own rental
+            * `GET /api/customer/rentals` — a signed-in customer reads their own rental history
             * `GET /health` — service health probe
 
             ### 3. Endpoints that DO need a token
@@ -178,6 +228,7 @@ builder.Services.AddSwaggerGen(options =>
             * Completing, cancelling, updating or deleting a rental
             * Listing or reading rentals
             * Everything under `/api/Customers` — these records hold personal data
+            * `GET /api/customer-auth/me` and `PUT /api/customer-auth/me` — Customer only
             * `GET /api/Statistics` — dashboard numbers (fleet, rentals, revenue chart)
 
             ### 4. Things worth knowing
@@ -235,6 +286,25 @@ builder.Services.AddHealthChecks();
 
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
+
+var jwtKey = builder.Configuration["Jwt:Key"];
+var adminPassword = builder.Configuration["AdminUser:Password"];
+if (!app.Environment.IsDevelopment()
+    && (string.IsNullOrWhiteSpace(jwtKey)
+        || jwtKey.Contains("CHANGE-ME", StringComparison.OrdinalIgnoreCase)
+        || Encoding.UTF8.GetByteCount(jwtKey) < 32
+        || string.IsNullOrWhiteSpace(adminPassword)
+        || adminPassword.Equals("Admin@12345", StringComparison.Ordinal)))
+{
+    throw new InvalidOperationException(
+        "Production startup requires a non-default Jwt:Key (at least 32 bytes) and AdminUser:Password.");
+}
+
+if (app.Environment.IsDevelopment()
+    && (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Contains("CHANGE-ME", StringComparison.OrdinalIgnoreCase)))
+{
+    app.Logger.LogWarning("Development JWT signing key is a placeholder. Configure Jwt:Key before any deployment.");
+}
 
 // Apply migrations at startup, but never let a database problem kill the process.
 // The original code called Migrate() unguarded, so an unreachable SQL Server took the
@@ -313,6 +383,8 @@ app.UseSwaggerUI(c =>
 
 // Authentication must run before authorization — the original had UseAuthorization()
 // with no authentication registered at all.
+app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

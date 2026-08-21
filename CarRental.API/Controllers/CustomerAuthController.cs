@@ -6,6 +6,8 @@ using CarRental.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace CarRental.API.Controllers;
 
@@ -24,11 +26,19 @@ public class CustomerAuthController(
 {
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CustomerAuthResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CustomerAuthResponseDto>> Register(CustomerRegisterDto dto)
     {
+        var name = dto.Name.Trim();
         var email = dto.Email.Trim().ToLowerInvariant();
+        var phone = dto.Phone.Trim();
+        if (name.Length == 0)
+            return Problem(detail: "Name cannot be blank.", statusCode: StatusCodes.Status400BadRequest, title: "Invalid name");
+        if (phone.Length > 0 && !phone.All(c => char.IsDigit(c) || "+()- ".Contains(c)))
+            return Problem(detail: "Phone number format is invalid.", statusCode: StatusCodes.Status400BadRequest, title: "Invalid phone");
+
         if (await customers.EmailExistsAsync(email))
             return Problem(
                 detail: "An account with this email already exists.",
@@ -37,13 +47,26 @@ public class CustomerAuthController(
 
         var customer = new Customer
         {
-            Name = dto.Name.Trim(),
+            Name = name,
             Email = email,
-            Phone = dto.Phone.Trim()
+            Phone = phone
         };
         customer.PasswordHash = passwordHasher.HashPassword(customer, dto.Password);
 
-        var created = await customers.CreateAsync(customer);
+        Customer created;
+        try
+        {
+            created = await customers.CreateAsync(customer);
+        }
+        catch (DbUpdateException)
+        {
+            // The unique index remains the final protection when two registrations race.
+            return Problem(
+                detail: "An account with this email already exists.",
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Email already registered");
+        }
+
         logger.LogInformation("Customer account created for {Email} with id {CustomerId}.", created.Email, created.Id);
 
         var response = CreateResponse(created);
@@ -52,6 +75,7 @@ public class CustomerAuthController(
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CustomerAuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CustomerAuthResponseDto>> Login(CustomerLoginDto dto)
@@ -106,11 +130,18 @@ public class CustomerAuthController(
         if (current is null)
             return NotFound();
 
+        var name = dto.Name.Trim();
+        var phone = dto.Phone.Trim();
+        if (name.Length == 0)
+            return Problem(detail: "Name cannot be blank.", statusCode: StatusCodes.Status400BadRequest, title: "Invalid name");
+        if (phone.Length > 0 && !phone.All(c => char.IsDigit(c) || "+()- ".Contains(c)))
+            return Problem(detail: "Phone number format is invalid.", statusCode: StatusCodes.Status400BadRequest, title: "Invalid phone");
+
         var updated = await customers.UpdateAsync(
             customerId.Value,
-            dto.Name.Trim(),
+            name,
             current.Email,
-            dto.Phone.Trim());
+            phone);
 
         return updated is null ? NotFound() : Ok(updated.ToDto());
     }

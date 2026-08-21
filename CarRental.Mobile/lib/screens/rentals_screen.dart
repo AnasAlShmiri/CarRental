@@ -329,6 +329,13 @@ class _RentalsScreenState extends State<RentalsScreen> {
     final services = AppScope.of(context);
     await services.cars.load();
     if (!mounted) return;
+    if (services.cars.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(services.cars.errorMessage!)),
+      );
+      return;
+    }
+
     final cars = services.cars.availableCars;
     if (cars.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -348,6 +355,7 @@ class _RentalsScreenState extends State<RentalsScreen> {
             start: start,
             end: end,
           );
+          if (success) await services.cars.load();
           if (success && sheetContext.mounted) Navigator.pop(sheetContext);
           return success ? null : services.rentals.errorMessage;
         },

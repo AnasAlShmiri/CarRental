@@ -94,9 +94,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'الاسم الكامل',
                       prefixIcon: Icon(Icons.person_outline_rounded),
                     ),
-                    validator: (value) => value == null || value.trim().length < 2
-                        ? 'أدخل الاسم الكامل'
-                        : null,
+                    validator: (value) {
+                      final name = value?.trim() ?? '';
+                      if (name.length < 2) return 'أدخل الاسم الكامل';
+                      if (name.length > 100) return 'الاسم طويل جدًا';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 13),
                   TextFormField(
@@ -109,7 +112,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       final email = value?.trim() ?? '';
-                      return email.contains('@') ? null : 'أدخل بريدًا صحيحًا';
+                      final valid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                          .hasMatch(email);
+                      if (!valid) return 'أدخل بريدًا إلكترونيًا صحيحًا';
+                      if (email.length > 150) return 'البريد الإلكتروني طويل جدًا';
+                      return null;
                     },
                   ),
                   const SizedBox(height: 13),
@@ -121,9 +128,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'رقم الهاتف',
                       prefixIcon: Icon(Icons.phone_outlined),
                     ),
-                    validator: (value) => value == null || value.trim().length < 6
-                        ? 'أدخل رقم هاتف صحيحًا'
-                        : null,
+                    validator: (value) {
+                      final phone = value?.trim() ?? '';
+                      return RegExp(r'^[0-9+()\-\s]{7,20}$').hasMatch(phone)
+                          ? null
+                          : 'رقم الهاتف يجب أن يحتوي على أرقام ورموز الاتصال فقط وبطول من 7 إلى 20 محرفًا';
+                    },
                   ),
                   const SizedBox(height: 13),
                   TextFormField(
@@ -144,9 +154,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    validator: (value) => value == null || value.length < 6
-                        ? 'كلمة المرور يجب ألا تقل عن 6 أحرف'
-                        : null,
+                    validator: (value) {
+                      final password = value ?? '';
+                      final strong = RegExp(
+                        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z\s]).{8,100}$',
+                      ).hasMatch(password);
+                      return strong
+                          ? null
+                          : 'كلمة المرور: 8 أحرف على الأقل مع حرف كبير وصغير ورقم ورمز';
+                    },
                   ),
                   const SizedBox(height: 13),
                   TextFormField(
