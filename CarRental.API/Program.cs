@@ -189,73 +189,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "CarRental API",
         Version = "v1",
-        // Swagger UI's markdown renderer does not support tables, so this description
-        // deliberately uses only headings, bold text and bullet lists — anything else
-        // collapses into one unreadable run of text.
-        Description = """
-            Car rental management API — Clean Architecture + Repository Pattern.
-
-            ### 1. Get a token (needed for admin operations)
-
-            **Step 1** — Run `POST /api/Auth/login` below with this body:
-
-            `{ "username": "admin", "password": "Admin@12345" }`
-
-            That is the development default, stored in `appsettings.Development.json` under
-            `AdminUser`. Never use it outside local development.
-
-            **Step 2** — Copy the `token` value from the response — the long string
-            only, without the surrounding quotes.
-
-            **Step 3** — Click the green **Authorize** button at the top-right of this
-            page, paste the token, then press Authorize and Close.
-
-            Paste the token **on its own**. Do not type `Bearer` in front of it —
-            Swagger adds that automatically, and typing it yourself breaks the header.
-
-            ### 2. Endpoints that need NO token
-
-            * `GET /api/Cars` — the full catalogue
-            * `GET /api/Cars/available` — only cars that are free to rent
-            * `GET /api/Cars/{id}` — a single car
-            * `POST /api/customer/rentals` — a signed-in customer creates their own rental
-            * `GET /api/customer/rentals` — a signed-in customer reads their own rental history
-            * `GET /health` — service health probe
-
-            ### 3. Endpoints that DO need a token
-
-            * Creating, updating or deleting a car
-            * Completing, cancelling, updating or deleting a rental
-            * Listing or reading rentals
-            * Everything under `/api/Customers` — these records hold personal data
-            * `GET /api/customer-auth/me` and `PUT /api/customer-auth/me` — Customer only
-            * `GET /api/Statistics` — dashboard numbers (fleet, rentals, revenue chart)
-
-            ### 4. Things worth knowing
-
-            * The Cars endpoints take form fields (multipart/form-data), not JSON — that
-              is what lets the photo ride along in the same request. Customers and
-              Rentals take JSON as usual.
-            * `totalPrice` is always calculated by the server. Never send it.
-            * On `PUT /api/Cars/{id}`, leave `status` empty to keep the car's current
-              status. Sending it is the only way to change it.
-            ### 5. Car photos — picked in the SAME form
-
-            `POST /api/Cars` and `PUT /api/Cars/{id}` take form fields, and the
-            **image** field shows a Choose-file button right in Swagger. One request:
-            fill in the car's details, pick the photo from your computer, press
-            Execute. The server stores the file under `wwwroot/uploads/` and fills in
-            `imageUrl` automatically.
-
-            * Accepted: jpg, jpeg, png, gif, webp — up to 5 MB.
-            * The real format is verified from the file's bytes, so renaming a
-              document to `.jpg` is rejected — and the car is NOT created.
-            * On PUT: leave **image** empty to keep the current photo, pick a file to
-              replace it (the old file is deleted), or set **removeImage** to true to
-              delete it.
-            * Every error response is a ProblemDetails object whose `detail` field
-              explains what went wrong and how to fix it.
-            """
+        Description = "واجهة برمجية لإدارة نظام تأجير السيارات."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -265,7 +199,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Paste the token from POST /api/auth/login (no \"Bearer \" prefix needed)."
+        Description = "مصادقة JWT."
     });
 
     // Swashbuckle 10 takes a factory, and Microsoft.OpenApi v2 keys security
