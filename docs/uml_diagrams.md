@@ -89,7 +89,7 @@ sequenceDiagram
     DB-->>SVC: المستخدم + Hash كلمة المرور
     SVC->>SVC: التحقق من كلمة المرور + إنشاء JWT
     SVC-->>API: Token + ExpiresAtUtc
-    API-->>C: 200 OK (accessToken)
+    API-->>C: 200 OK (token, expiresAtUtc)
 ```
 
 ## 5. مخطط الأصناف (Class Diagram)

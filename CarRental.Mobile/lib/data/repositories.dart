@@ -2,6 +2,10 @@ import '../core/api_client.dart';
 import '../core/session_store.dart';
 import 'models.dart';
 
+/// Serializes a calendar date without shifting it through the device timezone.
+String calendarDateUtcIso8601(DateTime value) =>
+    DateTime.utc(value.year, value.month, value.day).toIso8601String();
+
 class AuthRepository {
   AuthRepository(this._api);
   final ApiClient _api;
@@ -111,8 +115,10 @@ class RentalRepository {
       authenticated: true,
       body: {
         'carId': carId,
-        'startDate': start.toUtc().toIso8601String(),
-        'endDate': end.toUtc().toIso8601String(),
+        // Send a calendar date at UTC midnight without shifting the day from
+        // the device's local timezone (e.g. Yemen UTC+3).
+        'startDate': calendarDateUtcIso8601(start),
+        'endDate': calendarDateUtcIso8601(end),
       },
     );
     return Rental.fromJson(Map<String, dynamic>.from(data as Map));

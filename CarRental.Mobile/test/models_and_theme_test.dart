@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:car_rental_app/core/models.dart';
 import 'package:car_rental_app/core/app_theme.dart';
+import 'package:car_rental_app/data/repositories.dart';
 
 void main() {
   group('Car.fromJson', () {
@@ -48,6 +49,11 @@ void main() {
       expect(r.durationInDays, 5);
       expect(r.totalPrice, 750.0);
     });
+  });
+
+  test('تحويل تاريخ الحجز يحافظ على اليوم التقويمي', () {
+    final iso = calendarDateUtcIso8601(DateTime(2026, 8, 23));
+    expect(iso, '2026-08-23T00:00:00.000Z');
   });
 
   testWidgets('سمة التطبيق تستخدم خط Tajawal والألوان المعتمدة', (

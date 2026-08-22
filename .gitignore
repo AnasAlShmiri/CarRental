@@ -372,3 +372,12 @@ CarRental.API/wwwroot/uploads/*
 *.db-wal
 CarRental.Web/wwwroot/uploads/*
 !CarRental.Web/wwwroot/uploads/.gitkeep
+
+# Flutter generated and machine-local files
+CarRental.Mobile/.dart_tool/
+CarRental.Mobile/build/
+CarRental.Mobile/**/ephemeral/
+CarRental.Mobile/**/local.properties
+CarRental.Mobile/**/GeneratedPluginRegistrant.*
+CarRental.Mobile/**/generated_plugin_registrant.*
+CarRental.Mobile/**/.plugin_symlinks/

@@ -17,7 +17,7 @@ public class AdminLoginService(
     IOptions<JwtSettings> jwt)
 {
     public bool Validate(string username, string password) =>
-        string.Equals(admin.Value.Username, username, StringComparison.Ordinal)
+        string.Equals(admin.Value.Username, username, StringComparison.OrdinalIgnoreCase)
         && string.Equals(admin.Value.Password, password, StringComparison.Ordinal);
 
     public AdminUserSettings Admin => admin.Value;

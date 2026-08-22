@@ -63,10 +63,11 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
         string? uploadedUrl = null;
         try
         {
-            if (model.Image is not null)
+            if (model.Image is { Length: > 0 })
             {
+                await using var imageStream = model.Image.OpenReadStream();
                 var outcome = await images.SaveAsync(
-                    model.Image.OpenReadStream(), model.Image.FileName, model.Image.Length);
+                    imageStream, model.Image.FileName, model.Image.Length);
 
                 if (!outcome.Success)
                 {
@@ -135,36 +136,6 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
             return View(model);
         }
 
-        string? newImageUrl = null;
-        string? keepOrOldUrl = null;
-
-        if (model.Image is not null)
-        {
-            // New upload replaces the current photo.
-            var outcome = await images.SaveAsync(
-                model.Image.OpenReadStream(), model.Image.FileName, model.Image.Length);
-
-            if (!outcome.Success)
-            {
-                ModelState.AddModelError(nameof(CarViewModel.Image),
-                    outcome.Error ?? "فشل حفظ الصورة المرفوعة");
-                model.Id = id;
-                return View(model);
-            }
-
-            newImageUrl = outcome.RelativeUrl;
-        }
-        else if (model.RemoveImage)
-        {
-            // Explicit removal: clear the URL and delete the stored file.
-            newImageUrl = null;
-            images.TryDelete(model.CurrentImageUrl);
-        }
-        else
-        {
-            keepOrOldUrl = model.CurrentImageUrl;
-        }
-
         if (!string.IsNullOrWhiteSpace(model.Status) && !CarStatus.IsValid(model.Status))
         {
             ModelState.AddModelError(nameof(CarViewModel.Status),
@@ -173,18 +144,69 @@ public class CarsController(ICarRepository repo, ICarImageStorage images) : Cont
             return View(model);
         }
 
+        // Reload the authoritative record. CurrentImageUrl is a display-only hidden
+        // field and must never be trusted to decide which file is deleted or retained.
+        var existing = await repo.GetByIdAsync(id);
+        if (existing is null) return NotFound();
+
+        string? imageUrlChange = null; // null = keep, empty = remove, value = replace
+        if (model.Image is { Length: > 0 })
+        {
+            // New upload replaces the current photo.
+            await using var imageStream = model.Image.OpenReadStream();
+            var outcome = await images.SaveAsync(
+                imageStream, model.Image.FileName, model.Image.Length);
+
+            if (!outcome.Success)
+            {
+                ModelState.AddModelError(nameof(CarViewModel.Image),
+                    outcome.Error ?? "فشل حفظ الصورة المرفوعة");
+                model.Id = id;
+                model.CurrentImageUrl = existing.ImageUrl;
+                return View(model);
+            }
+
+            imageUrlChange = outcome.RelativeUrl;
+        }
+        else if (model.RemoveImage)
+        {
+            // Explicit removal is committed in the database first; the old file is
+            // deleted only after the row points at no image.
+            imageUrlChange = string.Empty;
+        }
+
         var status = string.IsNullOrWhiteSpace(model.Status)
-            ? (await repo.GetByIdAsync(id))?.Status
+            ? existing.Status
             : model.Status;
 
-        var updated = await repo.UpdateAsync(id,
-            model.CarModel.Trim(),
-            model.Brand.Trim(),
-            price,
-            newImageUrl ?? keepOrOldUrl,
-            status);
+        Car? updated;
+        try
+        {
+            updated = await repo.UpdateAsync(id,
+                model.CarModel.Trim(),
+                model.Brand.Trim(),
+                price,
+                imageUrlChange,
+                status);
+        }
+        catch
+        {
+            // A newly stored replacement is not referenced by the database yet.
+            if (!string.IsNullOrEmpty(imageUrlChange))
+                images.TryDelete(imageUrlChange);
+            throw;
+        }
 
-        if (updated is null) return NotFound();
+        if (updated is null)
+        {
+            if (!string.IsNullOrEmpty(imageUrlChange))
+                images.TryDelete(imageUrlChange);
+            return NotFound();
+        }
+
+        if (imageUrlChange is not null &&
+            !string.Equals(existing.ImageUrl, updated.ImageUrl, StringComparison.OrdinalIgnoreCase))
+            images.TryDelete(existing.ImageUrl);
 
         TempData["SuccessMessage"] = "تم تعديل بيانات السيارة بنجاح";
         return RedirectToAction("Index");

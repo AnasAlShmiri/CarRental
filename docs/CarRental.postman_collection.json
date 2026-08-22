@@ -1,7 +1,8 @@
 {
   "info": {
-    "name": "CarRental API",
-    "description": "Car rental management API — Clean Architecture + Repository Pattern.\n\nHOW TO USE\n1. Run the API (default http://localhost:5109).\n2. Send 'Auth / Login' first — it saves the JWT into the collection variable {{token}} automatically, and every protected request uses it.\n3. Cars create/update use multipart/form-data so the photo is picked in the same request (Body > form-data > image > Select Files).\n\nPublic endpoints (no token): car catalogue reads, POST /api/Rentals, GET /api/Rentals/customer/{id}, /health.",
+    "_postman_id": "d9f7046b-3e3f-4d1c-8e3d-carrental-full-suite",
+    "name": "CarRental API - Full Test Suite",
+    "description": "اختبار متسلسل كامل لـ CarRental API. اضبط adminPassword ثم شغّل Run Collection. يتم حفظ adminToken وcustomerToken ومعرفات الموارد تلقائيًا في متغيرات المجموعة. المصادقة JWT، والسيارات تستخدم multipart/form-data، وحجوزات العميل تستخدم هوية JWT الخاصة به.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -9,7 +10,7 @@
     "bearer": [
       {
         "key": "token",
-        "value": "{{token}}",
+        "value": "{{adminToken}}",
         "type": "string"
       }
     ]
@@ -20,22 +21,122 @@
       "value": "http://localhost:5109"
     },
     {
-      "key": "token",
+      "key": "adminUsername",
+      "value": "admin"
+    },
+    {
+      "key": "adminPassword",
+      "value": "CHANGE_ME"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "customerToken",
+      "value": ""
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "customerEmail",
+      "value": ""
+    },
+    {
+      "key": "customerPassword",
+      "value": "Customer@12345"
+    },
+    {
+      "key": "customerPhone",
+      "value": ""
+    },
+    {
+      "key": "carId",
+      "value": ""
+    },
+    {
+      "key": "secondCarId",
+      "value": ""
+    },
+    {
+      "key": "customerRentalId",
+      "value": ""
+    },
+    {
+      "key": "adminRentalId",
+      "value": ""
+    },
+    {
+      "key": "customerStartDate",
+      "value": ""
+    },
+    {
+      "key": "customerEndDate",
+      "value": ""
+    },
+    {
+      "key": "adminStartDate",
+      "value": ""
+    },
+    {
+      "key": "adminEndDate",
+      "value": ""
+    },
+    {
+      "key": "adminUpdateStartDate",
+      "value": ""
+    },
+    {
+      "key": "adminUpdateEndDate",
       "value": ""
     }
   ],
   "item": [
     {
-      "name": "Auth",
+      "name": "00 - Health & Admin Auth",
       "item": [
         {
-          "name": "Login (saves {{token}} automatically)",
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Operational health probe. No token required.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('health 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Login",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -49,13 +150,18 @@
                 "login"
               ]
             },
-            "description": "Returns a JWT. The test script stores it in the collection variable {{token}}.",
+            "description": "Issues the administrator JWT. Set adminPassword in collection variables before running.",
             "auth": {
               "type": "noauth"
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@12345\"\n}"
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -64,16 +170,18 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const d = pm.response.json();",
-                  "if (d && d.token) pm.collectionVariables.set('token', d.token);",
-                  "pm.test('token issued', () => pm.expect(d.token).to.be.a('string'));"
+                  "pm.test('admin login 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('admin token issued', () => pm.expect(j.token).to.be.a('string').and.not.empty);",
+                  "pm.test('admin role', () => pm.expect(j.role).to.eql('Admin'));",
+                  "pm.collectionVariables.set('adminToken', j.token);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Who am I",
+          "name": "Admin Me",
           "request": {
             "method": "GET",
             "header": [],
@@ -88,16 +196,374 @@
                 "me"
               ]
             },
-            "description": "Echoes the identity inside the token."
-          }
+            "description": "Confirms the JWT identity and role."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin me 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('admin identity', () => pm.expect(j.username).to.eql(pm.collectionVariables.get('adminUsername')));",
+                  "pm.test('admin claim', () => pm.expect(j.roles).to.include('Admin'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Me Without Token - 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Negative check for the protected admin identity endpoint.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin me without token 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cars",
+      "name": "01 - Customer Auth",
       "item": [
         {
-          "name": "List all cars",
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "register"
+              ]
+            },
+            "description": "Creates a customer account and returns a Customer JWT. The pre-request script generates a unique email per run.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Customer\",\n  \"email\": \"{{customerEmail}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now();",
+                  "pm.collectionVariables.set('customerEmail', `postman.${stamp}@example.com`);",
+                  "pm.collectionVariables.set('customerPhone', `050${String(stamp).slice(-7)}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer register 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('customer token issued', () => pm.expect(j.token).to.be.a('string').and.not.empty);",
+                  "pm.test('customer role', () => pm.expect(j.role).to.eql('Customer'));",
+                  "pm.test('customer id issued', () => pm.expect(j.customerId).to.be.a('number'));",
+                  "pm.collectionVariables.set('customerToken', j.token);",
+                  "pm.collectionVariables.set('customerId', String(j.customerId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate Register - 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Customer\",\n  \"email\": \"{{customerEmail}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('duplicate email 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer login 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('customer login token', () => pm.expect(j.token).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('customerToken', j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer me 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('customer id matches token session', () => pm.expect(String(j.id)).to.eql(pm.collectionVariables.get('customerId')));",
+                  "pm.test('customer email', () => pm.expect(j.email).to.eql(pm.collectionVariables.get('customerEmail')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Customer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Customer Updated\",\n  \"phone\": \"{{customerPhone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer profile update 200', () => pm.response.to.have.status(200));",
+                  "pm.test('profile name updated', () => pm.expect(pm.response.json().name).to.eql('Postman Customer Updated'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid Customer Login - 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"Wrong@12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('invalid customer login 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Cars",
+      "item": [
+        {
+          "name": "List All Cars",
           "request": {
             "method": "GET",
             "header": [],
@@ -111,14 +577,26 @@
                 "cars"
               ]
             },
-            "description": "\n\nNo token needed: public catalogue",
+            "description": "Public catalogue.",
             "auth": {
               "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('cars list 200', () => pm.response.to.have.status(200));",
+                  "pm.test('cars array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "List available cars",
+          "name": "List Available Cars",
           "request": {
             "method": "GET",
             "header": [],
@@ -133,14 +611,26 @@
                 "available"
               ]
             },
-            "description": "\n\nNo token needed: public catalogue",
+            "description": "Public catalogue of cars available for booking.",
             "auth": {
               "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('available cars 200', () => pm.response.to.have.status(200));",
+                  "pm.test('available cars array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Filter by status",
+          "name": "Filter Cars by Status",
           "request": {
             "method": "GET",
             "header": [],
@@ -160,36 +650,25 @@
                 }
               ]
             },
-            "description": "\n\nNo token needed: public catalogue",
             "auth": {
               "type": "noauth"
             }
-          }
-        },
-        {
-          "name": "Get one car",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cars/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cars",
-                "1"
-              ]
-            },
-            "description": "\n\nNo token needed: public catalogue",
-            "auth": {
-              "type": "noauth"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status filter 200', () => pm.response.to.have.status(200));",
+                  "pm.test('all results available', () => pm.response.json().forEach(c => pm.expect(c.status).to.eql('Available')));"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Create car + photo (one form)",
+          "name": "Create Main Car",
           "request": {
             "method": "POST",
             "header": [],
@@ -203,13 +682,13 @@
                 "cars"
               ]
             },
-            "description": "multipart/form-data — pick the photo in the image field. Leave it empty to create without a photo. A rejected image (wrong type / >5MB) means the car is NOT created.",
+            "description": "Admin-only multipart/form-data request. Image is optional; select a file in the image field when needed.",
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "model",
-                  "value": "Camry 2024",
+                  "value": "Postman Sedan",
                   "type": "text"
                 },
                 {
@@ -219,80 +698,84 @@
                 },
                 {
                   "key": "pricePerDay",
-                  "value": "150.00",
+                  "value": "150",
                   "type": "text"
-                },
-                {
-                  "key": "image",
-                  "type": "file",
-                  "src": []
                 }
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create car 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('car id issued', () => pm.expect(j.id).to.be.a('number'));",
+                  "pm.test('new car available', () => pm.expect(j.status).to.eql('Available'));",
+                  "pm.collectionVariables.set('carId', String(j.id));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Update car (keep photo & status)",
+          "name": "Get Main Car",
           "request": {
-            "method": "PUT",
+            "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cars/1",
+              "raw": "{{baseUrl}}/api/cars/{{carId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "cars",
-                "1"
+                "{{carId}}"
               ]
             },
-            "description": "Empty image = keep the current photo. No status field = keep the current status.",
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "model",
-                  "value": "Camry 2024",
-                  "type": "text"
-                },
-                {
-                  "key": "brand",
-                  "value": "Toyota",
-                  "type": "text"
-                },
-                {
-                  "key": "pricePerDay",
-                  "value": "175.00",
-                  "type": "text"
-                }
-              ]
+            "auth": {
+              "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('get car 200', () => pm.response.to.have.status(200));",
+                  "pm.test('car id matches', () => pm.expect(String(pm.response.json().id)).to.eql(pm.collectionVariables.get('carId')));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Replace car photo",
+          "name": "Update Main Car Status",
           "request": {
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cars/1",
+              "raw": "{{baseUrl}}/api/cars/{{carId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "cars",
-                "1"
+                "{{carId}}"
               ]
             },
-            "description": "The old photo file is deleted from the server.",
+            "description": "Admin-only multipart update. The status is explicitly restored to Available for the later booking tests.",
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "model",
-                  "value": "Camry 2024",
+                  "value": "Postman Sedan",
                   "type": "text"
                 },
                 {
@@ -302,132 +785,116 @@
                 },
                 {
                   "key": "pricePerDay",
-                  "value": "175.00",
-                  "type": "text"
-                },
-                {
-                  "key": "image",
-                  "type": "file",
-                  "src": []
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Remove car photo",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cars/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cars",
-                "1"
-              ]
-            },
-            "description": "",
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "model",
-                  "value": "Camry 2024",
-                  "type": "text"
-                },
-                {
-                  "key": "brand",
-                  "value": "Toyota",
-                  "type": "text"
-                },
-                {
-                  "key": "pricePerDay",
-                  "value": "175.00",
-                  "type": "text"
-                },
-                {
-                  "key": "removeImage",
-                  "value": "true",
-                  "type": "text"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Set car under maintenance",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cars/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cars",
-                "1"
-              ]
-            },
-            "description": "",
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "model",
-                  "value": "Camry 2024",
-                  "type": "text"
-                },
-                {
-                  "key": "brand",
-                  "value": "Toyota",
-                  "type": "text"
-                },
-                {
-                  "key": "pricePerDay",
-                  "value": "175.00",
+                  "value": "175",
                   "type": "text"
                 },
                 {
                   "key": "status",
-                  "value": "UnderMaintenance",
+                  "value": "Available",
                   "type": "text"
                 }
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('update car 200', () => pm.response.to.have.status(200));",
+                  "pm.test('car remains available', () => pm.expect(pm.response.json().status).to.eql('Available'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Delete car",
+          "name": "Create Disposable Car",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cars"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "model",
+                  "value": "Disposable Postman Car",
+                  "type": "text"
+                },
+                {
+                  "key": "brand",
+                  "value": "Test",
+                  "type": "text"
+                },
+                {
+                  "key": "pricePerDay",
+                  "value": "100",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create disposable car 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('secondCarId', String(pm.response.json().id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Disposable Car",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cars/1",
+              "raw": "{{baseUrl}}/api/cars/{{secondCarId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "cars",
-                "1"
+                "{{secondCarId}}"
               ]
             },
-            "description": "409 when the car has any rental history; its photo file is removed too."
-          }
+            "description": "Deletes a car with no rental history."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('delete disposable car 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Customers",
+      "name": "03 - Admin Customers",
       "item": [
         {
-          "name": "List customers",
+          "name": "List Customers",
           "request": {
             "method": "GET",
             "header": [],
@@ -440,116 +907,269 @@
                 "api",
                 "customers"
               ]
-            },
-            "description": ""
-          }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customers list 200', () => pm.response.to.have.status(200));",
+                  "pm.test('customers array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get one customer",
+          "name": "Get Customer",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/customers/1",
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "customers",
-                "1"
+                "{{customerId}}"
               ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Create customer",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers"
-              ]
-            },
-            "description": "Duplicate email returns 409.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Anas Sadeq\",\n  \"email\": \"anas@example.com\",\n  \"phone\": \"0500000000\"\n}"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('get customer 200', () => pm.response.to.have.status(200));",
+                  "pm.test('customer id matches', () => pm.expect(String(pm.response.json().id)).to.eql(pm.collectionVariables.get('customerId')));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Update customer",
+          "name": "Update Customer",
           "request": {
             "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/customers/1",
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "customers",
-                "1"
+                "{{customerId}}"
               ]
             },
-            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Anas S.\",\n  \"email\": \"anas@example.com\",\n  \"phone\": \"0500000001\"\n}"
+              "raw": "{\n  \"name\": \"Postman Customer Admin Updated\",\n  \"email\": \"{{customerEmail}}\",\n  \"phone\": \"{{customerPhone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
-        },
-        {
-          "name": "Delete customer",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                "1"
-              ]
-            },
-            "description": "409 when the customer has rentals."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin customer update 200', () => pm.response.to.have.status(200));",
+                  "pm.test('admin update name', () => pm.expect(pm.response.json().name).to.eql('Postman Customer Admin Updated'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Rentals",
+      "name": "04 - Customer Rentals",
       "item": [
         {
-          "name": "Book a car",
+          "name": "Create My Rental",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer/rentals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer",
+                "rentals"
+              ]
+            },
+            "description": "Customer-only booking. The customer identity is read from the JWT; customerId is intentionally not accepted in the body.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carId\": {{carId}},\n  \"startDate\": \"{{customerStartDate}}\",\n  \"endDate\": \"{{customerEndDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date(); start.setUTCDate(start.getUTCDate() + 2);",
+                  "const end = new Date(start); end.setUTCDate(end.getUTCDate() + 4);",
+                  "pm.collectionVariables.set('customerStartDate', start.toISOString().slice(0, 10));",
+                  "pm.collectionVariables.set('customerEndDate', end.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer rental 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('customer rental id', () => pm.expect(j.id).to.be.a('number'));",
+                  "pm.test('customer rental owner', () => pm.expect(String(j.customerId)).to.eql(pm.collectionVariables.get('customerId')));",
+                  "pm.collectionVariables.set('customerRentalId', String(j.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List My Rentals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer/rentals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer",
+                "rentals"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('my rentals 200', () => pm.response.to.have.status(200));",
+                  "const id = pm.collectionVariables.get('customerRentalId');",
+                  "pm.test('my rental is present', () => pm.expect(pm.response.json().some(r => String(r.id) === id)).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel My Rental",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer/rentals/{{customerRentalId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer",
+                "rentals",
+                "{{customerRentalId}}",
+                "cancel"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer cancel 200', () => pm.response.to.have.status(200));",
+                  "pm.test('rental cancelled', () => pm.expect(pm.response.json().status).to.eql('Cancelled'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Admin Rentals",
+      "item": [
+        {
+          "name": "Create Admin Rental",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -562,18 +1182,48 @@
                 "rentals"
               ]
             },
-            "description": "totalPrice is always calculated by the server.\n\nNo token needed: a customer books their own rental",
-            "auth": {
-              "type": "noauth"
-            },
+            "description": "Admin-only booking. totalPrice and status are calculated by the server.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"carId\": 1,\n  \"customerId\": 1,\n  \"startDate\": \"2026-08-01\",\n  \"endDate\": \"2026-08-08\"\n}"
+              "raw": "{\n  \"carId\": {{carId}},\n  \"customerId\": {{customerId}},\n  \"startDate\": \"{{adminStartDate}}\",\n  \"endDate\": \"{{adminEndDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date(); start.setUTCDate(start.getUTCDate() + 10);",
+                  "const end = new Date(start); end.setUTCDate(end.getUTCDate() + 4);",
+                  "pm.collectionVariables.set('adminStartDate', start.toISOString().slice(0, 10));",
+                  "pm.collectionVariables.set('adminEndDate', end.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin rental 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('admin rental id', () => pm.expect(j.id).to.be.a('number'));",
+                  "pm.test('admin rental active', () => pm.expect(j.status).to.eql('Active'));",
+                  "pm.test('server calculated total', () => pm.expect(j.totalPrice).to.be.above(0));",
+                  "pm.collectionVariables.set('adminRentalId', String(j.id));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "List rentals",
+          "name": "List All Rentals",
           "request": {
             "method": "GET",
             "header": [],
@@ -586,17 +1236,28 @@
                 "api",
                 "rentals"
               ]
-            },
-            "description": ""
-          }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin rentals list 200', () => pm.response.to.have.status(200));",
+                  "pm.test('rentals array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Customer rental history",
+          "name": "Get Customer Rental History",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/rentals/customer/1",
+              "raw": "{{baseUrl}}/api/rentals/customer/{{customerId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -604,128 +1265,179 @@
                 "api",
                 "rentals",
                 "customer",
-                "1"
+                "{{customerId}}"
               ]
-            },
-            "description": "\n\nNo token needed: the mobile app's My-Rentals screen has no login",
-            "auth": {
-              "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin customer history 200', () => pm.response.to.have.status(200));",
+                  "pm.test('history array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get one rental",
+          "name": "Get Admin Rental",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/rentals/1",
+              "raw": "{{baseUrl}}/api/rentals/{{adminRentalId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "rentals",
-                "1"
+                "{{adminRentalId}}"
               ]
-            },
-            "description": ""
-          }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('get admin rental 200', () => pm.response.to.have.status(200));",
+                  "pm.test('rental id matches', () => pm.expect(String(pm.response.json().id)).to.eql(pm.collectionVariables.get('adminRentalId')));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Update rental period",
+          "name": "Update Rental Dates",
           "request": {
             "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/rentals/1",
+              "raw": "{{baseUrl}}/api/rentals/{{adminRentalId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "rentals",
-                "1"
+                "{{adminRentalId}}"
               ]
             },
-            "description": "totalPrice recalculated server-side; omit status to keep it.",
+            "description": "Only dates and optional status are accepted. totalPrice is recalculated by the server.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"startDate\": \"2026-08-01\",\n  \"endDate\": \"2026-08-10\"\n}"
+              "raw": "{\n  \"startDate\": \"{{adminUpdateStartDate}}\",\n  \"endDate\": \"{{adminUpdateEndDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date(); start.setUTCDate(start.getUTCDate() + 12);",
+                  "const end = new Date(start); end.setUTCDate(end.getUTCDate() + 5);",
+                  "pm.collectionVariables.set('adminUpdateStartDate', start.toISOString().slice(0, 10));",
+                  "pm.collectionVariables.set('adminUpdateEndDate', end.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rental update 200', () => pm.response.to.have.status(200));",
+                  "pm.test('updated total remains positive', () => pm.expect(pm.response.json().totalPrice).to.be.above(0));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Complete rental (frees the car)",
+          "name": "Complete Admin Rental",
           "request": {
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/rentals/1/complete",
+              "raw": "{{baseUrl}}/api/rentals/{{adminRentalId}}/complete",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "rentals",
-                "1",
+                "{{adminRentalId}}",
                 "complete"
               ]
-            },
-            "description": ""
-          }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('complete rental 200', () => pm.response.to.have.status(200));",
+                  "pm.test('rental completed', () => pm.expect(pm.response.json().status).to.eql('Completed'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Cancel rental (frees the car)",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/rentals/1/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "rentals",
-                "1",
-                "cancel"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Delete rental (frees the car)",
+          "name": "Delete Completed Rental",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/rentals/1",
+              "raw": "{{baseUrl}}/api/rentals/{{adminRentalId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "rentals",
-                "1"
+                "{{adminRentalId}}"
               ]
             },
-            "description": ""
-          }
+            "description": "Deletes the test rental after completion."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('delete rental 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Statistics",
+      "name": "06 - Dashboard Statistics",
       "item": [
         {
-          "name": "Dashboard statistics",
+          "name": "Statistics",
           "request": {
             "method": "GET",
             "header": [],
@@ -744,34 +1456,332 @@
                   "value": "6"
                 }
               ]
-            },
-            "description": "Fleet breakdown, customers, rental pipeline, revenue and the monthly revenue series for charts."
-          }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statistics 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('statistics cars', () => pm.expect(j.cars).to.exist);",
+                  "pm.test('statistics customers', () => pm.expect(j.customers).to.exist);",
+                  "pm.test('statistics rentals', () => pm.expect(j.rentals).to.exist);",
+                  "pm.test('monthly revenue array', () => pm.expect(j.monthlyRevenue).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Health",
+      "name": "99 - Authorization & Validation",
       "item": [
         {
-          "name": "Health probe",
+          "name": "Create Car Without Token - 401",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/health",
+              "raw": "{{baseUrl}}/api/cars",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "health"
+                "api",
+                "cars"
               ]
             },
-            "description": "\n\nNo token needed: operational probe",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "model",
+                  "value": "Postman Sedan",
+                  "type": "text"
+                },
+                {
+                  "key": "brand",
+                  "value": "Toyota",
+                  "type": "text"
+                },
+                {
+                  "key": "pricePerDay",
+                  "value": "150",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous car create 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer Cannot Create Car - 403",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cars"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "model",
+                  "value": "Postman Sedan",
+                  "type": "text"
+                },
+                {
+                  "key": "brand",
+                  "value": "Toyota",
+                  "type": "text"
+                },
+                {
+                  "key": "pricePerDay",
+                  "value": "150",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer car create 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer Cannot Read Admin Statistics - 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/statistics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "statistics"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('customer statistics 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Cannot Read Customer Profile - 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin customer profile 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid Car Price - 400",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cars"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "model",
+                  "value": "Invalid Price Car",
+                  "type": "text"
+                },
+                {
+                  "key": "brand",
+                  "value": "Test",
+                  "type": "text"
+                },
+                {
+                  "key": "pricePerDay",
+                  "value": "0",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('invalid car price 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid Customer Registration - 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customer-auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "customer-auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad\",\n  \"email\": \"not-an-email\",\n  \"phone\": \"123\",\n  \"password\": \"weak\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('invalid customer registration 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing Car - 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cars",
+                "999999"
+              ]
+            },
             "auth": {
               "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('missing car 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

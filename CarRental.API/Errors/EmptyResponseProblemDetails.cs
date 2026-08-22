@@ -45,11 +45,7 @@ public static class EmptyResponseProblemDetails
     {
         StatusCodes.Status401Unauthorized => (
             "Authentication required",
-            "This endpoint needs a bearer token. Send POST /api/auth/login with your admin "
-          + "username and password, copy the \"token\" from the response, then either click "
-          + "\"Authorize\" in Swagger and paste it, or add the header "
-          + "\"Authorization: Bearer <token>\" to your request. Note: public catalogue "
-          + "endpoints such as GET /api/cars need no token at all."),
+            "A valid bearer token is required for this endpoint."),
 
         StatusCodes.Status403Forbidden => (
             "Access denied",
@@ -80,8 +76,7 @@ public static class EmptyResponseProblemDetails
 
         StatusCodes.Status503ServiceUnavailable => (
             "Service unavailable",
-            "The API cannot reach its database right now. Make sure SQL Server is running, "
-          + "then retry."),
+            "The API cannot access its configured database right now. Check the connection settings and retry."),
 
         _ => (
             "Request failed",

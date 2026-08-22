@@ -7,7 +7,7 @@
 | المشرف | أ.د. إبراهيم أحمد البلطه |
 | الجامعة | جامعة الحكمة — كلية تقنية المعلومات |
 | الإصدار | 2.0 — أغسطس 2026 |
-| التقنيات | ASP.NET Core 10 (MVC + Web API + JWT)، Clean Architecture، SQLite/SQL Server، Flutter، GitHub |
+| التقنيات | ASP.NET Core 10 (MVC + Web API + JWT)، Clean Architecture، SQLite مشتركة، Flutter، GitHub |
 
 ---
 
@@ -102,7 +102,7 @@
 
 ### مخطط التسلسل
 
-مخططا `POST /api/rentals` (حجز سيارة) و`POST /api/auth/login` (المصادقة) يوضحان تدفق الطلب من الواجهة إلى طبقة الأعمال ثم قاعدة البيانات والعودة.
+مخططا `POST /api/customer/rentals` (حجز العميل بهوية JWT) و`POST /api/auth/login` (مصادقة المدير) يوضحان تدفق الطلب من الواجهة إلى طبقة الأعمال ثم قاعدة البيانات والعودة. يوجد أيضًا مسار إداري منفصل `POST /api/rentals` محمي بدور Admin.
 
 ### مخطط الأصناف
 
@@ -118,21 +118,21 @@
 |---|---|
 | .NET SDK | 10.0.110 أو أحدث |
 | IDE | Visual Studio 2026 / VS Code |
-| قاعدة البيانات | SQL Server LocalDB (افتراضي) أو SQLite |
+| قاعدة البيانات | SQLite مشتركة في جذر المشروع |
 | Flutter | 3.27 أو أحدث (للتطبيق الجوال) |
 
 ### خطوات التثبيت
 
-1. استنساخ المستودع: `git clone --branch mvc-dashboard https://github.com/AnasAlShmiri/CarRental.git`
+1. استنساخ الفرع الحالي: `git clone --branch fix/portable-windows-config https://github.com/AnasAlShmiri/CarRental.git`
 2. فتح الحل `CarRental.slnx` في Visual Studio والانتظار حتى تحميل SDK 10.
-3. ضبط سلسلة الاتصال في `appsettings.json` (افتراضيًا LocalDB، ويُنشأ الجدول تلقائيًا).
+3. لا تعدّل سلسلة الاتصال المحلية؛ يستخدم المشروع SQLite في جذر المستودع وينشئ الجداول تلقائيًا.
 4. من Solution Explorer: النقر بزر الفأرة الأيمن على **CarRental.Web** ← **Set as Startup Project**.
-5. التشغيل بـ `Ctrl+F5` وفتح المتصفح على `https://localhost:5110`.
-6. الدخول بالحساب الافتراضي: `admin` / `Admin@12345`.
+5. التشغيل باستخدام `Run-CarRental.cmd` وفتح لوحة الإدارة على `http://localhost:5110`.
+6. بيانات المدير المحلية موجودة في `appsettings.Development.json` ولا تُستخدم خارج بيئة التطوير.
 
 ### تشغيل الـ API
 
-غيّر مشروع البدء إلى **CarRental.API** ثم شغّله؛ سيشتغل Swagger على `https://localhost:5109/swagger`. لتشغيل تطبيق Flutter: `cd CarRental.Mobile && flutter run` بعد تعديل `api_config.dart` بعنوان الخادم.
+شغّل **CarRental.API** على `http://localhost:5109` باستخدام `Run-API.cmd`، ثم شغّل **CarRental.Web** على `http://localhost:5110` باستخدام `Run-MVC.cmd` أو السكربت الرئيسي. لتشغيل Flutter استخدم `Run-Mobile.cmd` بعد تثبيت Flutter.
 
 ### دليل الاستخدام
 
@@ -151,18 +151,18 @@
 
 | الرقم | الحالة | الخطوات | النتيجة المتوقعة | النتيجة |
 |---|---|---|---|---|
-| TC-01 | الدخول — بيانات صحيحة | POST /api/auth/login | 200 + accessToken | ناجح |
+| TC-01 | دخول المدير — بيانات صحيحة | POST /api/auth/login | 200 + token | ناجح |
 | TC-02 | الدخول — كلمة مرور خاطئة | POST /api/auth/login | 401 | ناجح |
 | TC-03 | قائمة السيارات | GET /api/cars مع توكن | 200 + مصفوفة | ناجح |
 | TC-04 | إضافة سيارة | POST /api/cars | 201 | ناجح |
 | TC-05 | تعديل سيارة | PUT /api/cars/{id} | 200 | ناجح |
-| TC-06 | تغيير حالة سيارة | PUT /api/cars/{id}/status | 200 + UpdateStatus | ناجح |
+| TC-06 | إنشاء حجز العميل | POST /api/customer/rentals | 201 + السعر محسوب خادميًا | ناجح |
 | TC-07 | إضافة عميل | POST /api/customers | 201 | ناجح |
-| TC-08 | حجز سيارة | POST /api/rentals | 201 + سيارة تصير Rented | ناجح |
-| TC-09 | إكمال إيجار | POST /api/rentals/{id}/complete | 200 + السيارة Available | ناجح |
-| TC-10 | إلغاء إيجار | POST /api/rentals/{id}/cancel | 200 + Cancelled | ناجح |
-| TC-11 | رفع صورة سيارة | multipart POST /api/cars/{id}/image | 200 + مسار الصورة | ناجح |
-| TC-12 | API غير محمي | GET /api/cars بدون توكن | 401 | ناجح |
+| TC-08 | إنشاء حجز إداري | POST /api/rentals | 201 + السيارة Rented | ناجح |
+| TC-09 | إكمال إيجار | PUT /api/rentals/{id}/complete | 200 + السيارة Available | ناجح |
+| TC-10 | إلغاء إيجار العميل | POST /api/customer/rentals/{id}/cancel | 200 + Cancelled | ناجح |
+| TC-11 | حدود الأدوار | Customer مقابل مسارات Admin | 403 | ناجح |
+| TC-12 | API محمي | طلب مسار Admin دون JWT | 401 | ناجح |
 
 ### اختبارات وحدة Flutter
 
@@ -187,9 +187,9 @@
 | الفرع | الوصف |
 |---|---|
 | main | الفرع الرئيسي للإنتاج |
-| mvc-dashboard | نسخة الواجهة الكاملة (التصميم الفاتح العربي RTL) |
-| features/modal-datatable-icons | Bootstrap Icons + Tajawal + Modals + DataTables (PR #2 — تم الدمج) |
-| features/flutter-app | تطبيق الجوال Flutter (PR #3) |
+| mvc-dashboard | فرع لوحة MVC الأساسي |
+| fix/portable-windows-config | الإصدار المتكامل الحالي: SQLite مشتركة، API/MVC/Flutter والتشغيل المحمول (PR #8) |
+
 
 أُجري الدمج بنمط Squash Merge مع رسائل commit موثقة، مما يعكس سير عمل احترافي متكامل.
 

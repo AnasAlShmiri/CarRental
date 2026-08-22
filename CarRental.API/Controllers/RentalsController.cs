@@ -166,8 +166,11 @@ public class RentalsController(
                 statusCode: StatusCodes.Status404NotFound,
                 title: "Not found");
 
-        // Don't let an edit push this rental onto another active booking of the same car.
-        if (await rentalRepo.HasOverlappingRentalAsync(existing.CarId, start, end, excludeRentalId: id))
+        // Only an active rental holds a car, so historical/closed rentals may be
+        // corrected even when their dates overlap a current booking.
+        var resultingStatus = dto.Status ?? existing.Status;
+        if (RentalStatus.IsOpen(resultingStatus)
+            && await rentalRepo.HasOverlappingRentalAsync(existing.CarId, start, end, excludeRentalId: id))
             return Problem(
                 detail: "Another active rental for this car overlaps those dates.",
                 statusCode: StatusCodes.Status409Conflict,

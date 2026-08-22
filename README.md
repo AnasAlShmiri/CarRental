@@ -29,6 +29,7 @@ CarRental/
 ├── CarRental.Infrastructure/  # DbContext, repositories, storage, auth
 ├── tests/test_api.sh          # اختبارات HTTP شاملة
 ├── docs/professional_audit.md # سجل التدقيق والإصلاحات
+├── docs/CarRental.postman_collection.json # مجموعة اختبار API متسلسلة
 ├── Run-CarRental.cmd          # تشغيل API ثم MVC وفتح المتصفح
 ├── Run-API.cmd                # تشغيل API فقط
 ├── Run-MVC.cmd                # تشغيل لوحة MVC فقط
@@ -241,6 +242,14 @@ GET /uploads/{fileName}            # صورة سيارة عامة عبر API
 | `429` | تجاوز معدل المصادقة |
 | `503` | عدم توفر قاعدة البيانات أو مورد تابع |
 
+## Postman Collection
+
+يوجد ملف [`docs/CarRental.postman_collection.json`](docs/CarRental.postman_collection.json) بصيغة Postman Collection v2.1، ومنظم على شكل مجلدات متسلسلة للمصادقة والسيارات والعملاء وحجوزات العميل والحجوزات الإدارية والإحصائيات واختبارات الصلاحيات. يستعمل الملف متغيرات المجموعة `baseUrl` و`adminPassword` و`adminToken` و`customerToken`، ويحفظ المعرفات الناتجة تلقائيًا أثناء تشغيل المجموعة.
+
+لاستيراد الملف، افتح Postman ثم اختر **Import** وحدد ملف `docs/CarRental.postman_collection.json`. اضبط `baseUrl` على `http://localhost:5109` وكلمة مرور المدير في متغير `adminPassword`، ثم شغّل API ونفّذ **Run Collection**. لا يحتوي الملف على توكن ثابت؛ طلب تسجيل الدخول ينشئ توكنًا جديدًا ويحفظه تلقائيًا. طلبات السيارات التي تستخدم الصور تحتوي حقل `image` اختياريًا بصيغة `form-data`، بينما حجوزات العميل تستخدم `customerToken` ولا تقبل `customerId` في جسم الطلب.
+
+المجموعة الحالية متوافقة مع المسارات الفعلية، ومنها `POST /api/customer-auth/register` و`POST /api/customer/rentals` و`POST /api/customer/rentals/{id}/cancel`، ولا تصف هذه المسارات على أنها عامة أو مجهولة.
+
 ## الاختبارات
 
 تشغيل اختبارات API من PowerShell بعد تشغيل API:
@@ -266,7 +275,7 @@ flutter test
 | بناء API وMVC | ناجح دون أخطاء ترجمة |
 | Flutter analyze | ناجح دون أخطاء |
 | Flutter test | جميع الاختبارات الحالية ناجحة |
-| اختبار API الشامل | **126 ناجحًا، 0 فاشل** |
+| اختبار API الشامل | **132 ناجحًا، 0 فاشل** |
 | رحلة تسجيل العميل والحجز والإلغاء | ناجحة |
 | حدود أدوار Customer وAdmin | ناجحة |
 

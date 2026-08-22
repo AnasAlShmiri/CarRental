@@ -1,6 +1,5 @@
 using System.Text.Json;
 using CarRental.Application.Interfaces;
-using CarRental.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,11 +26,4 @@ public class DashboardController(IStatisticsRepository statistics) : Controller
         return View(stats);
     }
 
-    // GET: /home/error
-    [AllowAnonymous]
-    public IActionResult Error() => View(new ErrorViewModel
-    {
-        Title = "حدث خطأ غير متوقع",
-        Detail = "يرجى المحاولة مرة أخرى. إذا استمرت المشكلة فاتصل بمسؤول النظام."
-    });
 }

@@ -62,7 +62,7 @@ public class GlobalExceptionHandler(
         InvalidOperationException ioEx =>
             (StatusCodes.Status400BadRequest, "Invalid operation", ioEx.Message),
 
-        // LocalDB/SQL Server not reachable, or the platform doesn't support it.
+        // The configured database provider is unavailable, or the platform doesn't support it.
         PlatformNotSupportedException pEx =>
             (StatusCodes.Status503ServiceUnavailable,
              "Database unavailable",

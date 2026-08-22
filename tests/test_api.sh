@@ -267,6 +267,21 @@ PRICE=$(jqv "['totalPrice']")
   || { FAIL=$((FAIL+1)); FAILURES+=("TotalPrice zeroed on update: $PRICE"); echo -e "  \033[31mFAIL\033[0m  TotalPrice = $PRICE"; }
 assert_json "Status still Active after date edit" "['status']" "Active"
 
+# A closed historical rental may be corrected even if its new dates overlap a
+# current active booking; only an open rental holds the car.
+req PUT "/api/rentals/$RENT1/complete" "" "$TOKEN"
+check "Close rental before historical-date regression -> 200" 200
+req POST /api/rentals "{\"carId\":$CAR1,\"customerId\":$CUST2,\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
+check "Create active booking for overlap regression -> 201" 201
+RENT_HISTORY_HOLDER=$(jqv "['id']")
+req PUT "/api/rentals/$RENT1" "{\"startDate\":\"$TOMORROW\",\"endDate\":\"$NEXTWEEK\"}" "$TOKEN"
+check "Correct closed rental dates over active booking -> 200" 200
+assert_json "Closed rental status is preserved" "['status']" "Completed"
+req DELETE "/api/rentals/$RENT_HISTORY_HOLDER" "" "$TOKEN"
+check "Delete temporary overlap booking -> 204" 204
+req PUT "/api/rentals/$RENT1" "{\"startDate\":\"$TOMORROW\",\"endDate\":\"$LATER\",\"status\":\"Active\"}" "$TOKEN"
+check "Reopen rental for lifecycle tests -> 200" 200
+
 # ---- 8. rental lifecycle (was completely missing) ---------------------------
 section "8. BUG#7 — complete/cancel lifecycle releases the car"
 req PUT "/api/rentals/$RENT1/complete" "" "$TOKEN"

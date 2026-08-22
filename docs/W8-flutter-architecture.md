@@ -54,18 +54,20 @@
 
 | العملية | المسار | الحماية |
 |---|---|---|
-| Login | `POST /api/auth/login` | عامة |
-| Cars | `GET /api/cars` | عامة |
+| Register | `POST /api/customer-auth/register` | عامة |
+| Login | `POST /api/customer-auth/login` | عامة |
+| Profile | `GET /api/customer-auth/me` | Customer JWT |
+| Update profile | `PUT /api/customer-auth/me` | Customer JWT |
 | Available cars | `GET /api/cars/available` | عامة |
-| Rentals | `GET /api/rentals` | JWT |
-| Customers | `GET /api/customers` | JWT |
-| Create rental | `POST /api/rentals` | JWT بحسب إعداد API |
+| My rentals | `GET /api/customer/rentals` | Customer JWT |
+| Create rental | `POST /api/customer/rentals` | Customer JWT |
+| Cancel rental | `POST /api/customer/rentals/{id}/cancel` | Customer JWT |
 
 تقرأ `SessionStore` الرمز واسم المستخدم والدور ووقت الانتهاء من `SharedPreferences`. عند انتهاء الجلسة أو تسجيل الخروج يتم حذف جميع بيانات المصادقة محليًا.
 
 ## 7. التشغيل
 
-من مجلد `CarRental.Mobile`:
+من جذر المستودع على Windows يمكن تشغيل `Run-Mobile.cmd`؛ فهو يبحث عن Flutter في PATH والمسارات الشائعة ثم ينفذ `flutter pub get` و`flutter run`. يدويًا من مجلد `CarRental.Mobile`:
 
 ```bash
 flutter pub get
@@ -74,13 +76,7 @@ flutter test
 flutter run
 ```
 
-على Android Emulator يجب أن يكون عنوان التطوير:
-
-```dart
-static const String baseUrl = 'http://10.0.2.2:5109';
-```
-
-وعلى جهاز حقيقي يستبدل العنوان بعنوان IP الخاص بجهاز تشغيل Web API على الشبكة المحلية.
+يختار `ApiConfig` عنوان `http://10.0.2.2:5109` تلقائيًا لمحاكي Android، و`http://localhost:5109` للويب وiOS Simulator. على جهاز حقيقي اضبط `physicalDeviceBaseUrl` على عنوان IP المحلي لجهاز تشغيل Web API، مثل `http://192.168.1.5:5109`.
 
 ## 8. المخرجات التعليمية لـ W8
 

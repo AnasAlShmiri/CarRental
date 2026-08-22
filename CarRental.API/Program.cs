@@ -28,9 +28,9 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ──────────────────────────────────────────────────────────────────
-// The provider is configurable so the same code can run against SQL Server (default,
-// what you use on Windows) or SQLite/InMemory for testing on machines without SQL Server.
-// Set it via "DatabaseProvider" in appsettings.json or the DatabaseProvider env var.
+// SQLite is the portable default; the same code can also run against SQL Server or
+// InMemory when explicitly selected. Set it via "DatabaseProvider" in appsettings.json
+// or the DatabaseProvider environment variable.
 var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var isSqlServer = provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase);
@@ -252,9 +252,8 @@ if (app.Environment.IsDevelopment())
     try
     {
         // The migrations in CarRental.Infrastructure/Migrations are generated for SQL Server.
-        // Replaying them on another provider raises a false PendingModelChangesWarning
-        // (provider type mappings differ), so the alternative providers just get the schema
-        // created directly. Migrations remain the source of truth for SQL Server.
+        // Replaying them on another provider can raise provider-specific model warnings, so
+        // SQLite and InMemory get their schema created directly. SQL Server uses migrations.
         if (isSqlServer)
             db.Database.Migrate();
         else

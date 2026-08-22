@@ -74,7 +74,7 @@ class SessionStore {
     final token = await readToken();
     if (token == null || token.isEmpty) return false;
     final expiry = await readExpiry();
-    return expiry == null || expiry.isAfter(DateTime.now().toUtc());
+    return expiry != null && expiry.isAfter(DateTime.now().toUtc());
   }
 
   static Future<void> updateCustomerProfile({

@@ -77,6 +77,6 @@
         "Active"    => "<span class='pill pill-active'>نشط</span>",
         "Completed" => "<span class='pill pill-completed'>مكتمل</span>",
         "Cancelled" => "<span class='pill pill-cancelled'>ملغى</span>",
-        _ => $"<span class='pill'>{status}</span>"
+        _ => $"<span class='pill'>{System.Net.WebUtility.HtmlEncode(status)}</span>"
     };
 }

@@ -47,6 +47,6 @@
         "Available"        => "<span class='pill pill-available'>متاحة</span>",
         "Rented"           => "<span class='pill pill-rented'>مؤجَّرة</span>",
         "UnderMaintenance" => "<span class='pill pill-maintenance'>قيد الصيانة</span>",
-        _ => $"<span class='pill'>{status}</span>"
+        _ => $"<span class='pill'>{System.Net.WebUtility.HtmlEncode(status)}</span>"
     };
 }

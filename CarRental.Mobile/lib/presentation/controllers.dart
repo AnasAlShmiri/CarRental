@@ -22,7 +22,7 @@ class AuthController extends ChangeNotifier {
         valid && role?.toLowerCase() == 'customer' && customerId != null;
     if (isAuthenticated) {
       username = await repository.username();
-    } else if (valid) {
+    } else {
       await repository.logout();
       username = null;
     }

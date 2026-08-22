@@ -55,6 +55,9 @@ public class RentalsController(
             return View(model);
         }
 
+        var start = DateTime.SpecifyKind(model.StartDate.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(model.EndDate.Date, DateTimeKind.Utc);
+
         var car = await carRepo.GetByIdAsync(model.CarId);
         if (car is null)
         {
@@ -68,14 +71,14 @@ public class RentalsController(
             return View(model);
         }
 
-        if (model.EndDate.Date <= model.StartDate.Date)
+        if (end <= start)
         {
             ModelState.AddModelError(nameof(RentalViewModel.EndDate),
                 "تاريخ النهاية يجب أن يكون بعد تاريخ البداية بيوم على الأقل");
             return View(model);
         }
 
-        if (model.StartDate.Date < DateTime.UtcNow.Date)
+        if (start.Date < DateTime.UtcNow.Date)
         {
             ModelState.AddModelError(nameof(RentalViewModel.StartDate),
                 "لا يمكن الحجز بتاريخ بداية في الماضي");
@@ -89,7 +92,7 @@ public class RentalsController(
             return View(model);
         }
 
-        if (await rentalRepo.HasOverlappingRentalAsync(model.CarId, model.StartDate, model.EndDate))
+        if (await rentalRepo.HasOverlappingRentalAsync(model.CarId, start, end))
         {
             ModelState.AddModelError(nameof(RentalViewModel.CarId),
                 "السيارة محجوزة بالفعل خلال هذه الفترة — اختر فترة أخرى أو سيارة أخرى");
@@ -109,8 +112,8 @@ public class RentalsController(
             {
                 CarId = model.CarId,
                 CustomerId = model.CustomerId,
-                StartDate = model.StartDate,
-                EndDate = model.EndDate
+                StartDate = start,
+                EndDate = end
             });
         }
         catch (DomainConflictException ex)
