@@ -48,6 +48,23 @@ CarRental/
 
 لا يحتاج التشغيل المحلي إلى SQL Server؛ فالإعداد الافتراضي هو SQLite. لا تُرفع قاعدة `car-rental.db` إلى GitHub، فهي ملف تشغيل محلي وموجود في `.gitignore`.
 
+## ملفات التشغيل CMD على Windows
+
+جميع ملفات التشغيل موجودة في جذر المستودع، ويمكن تشغيلها بالنقر المزدوج أو من PowerShell. لا تنفذ أكثر من نسخة واحدة من API أو MVC على المنفذ نفسه.
+
+| الملف | الاستخدام |
+|---|---|
+| `Setup-CarRental.cmd` | يُستخدم مرة واحدة بعد نسخ المشروع إلى جهاز جديد لاستعادة حزم .NET وFlutter وبناء الحل |
+| `Run-CarRental.cmd` | التشغيل الطبيعي الكامل؛ يبدأ API ثم MVC ويفتح Swagger ولوحة الإدارة |
+| `Run-API.cmd` | يبدأ API وSwagger على المنفذ 5109 فقط |
+| `Run-MVC.cmd` | يبدأ لوحة MVC على المنفذ 5110 فقط |
+| `Run-Mobile.cmd` | يبدأ تطبيق Flutter بعد اكتشاف Flutter SDK |
+| `Open-CarRental.cmd` | يفتح روابط Swagger وMVC بدون تشغيل الخدمات |
+| `Stop-CarRental.cmd` | يوقف الخدمات التي تستخدم المنفذين 5109 و5110 |
+| `Run-Tests.cmd` | يبني الحل ويشغل فحص Flutter واختباراته |
+| `Run-API-Tests.cmd` | يشغل اختبارات HTTP من خلال Git Bash أو Bash |
+| `Run-Postman.cmd` | يشغل مجموعة Newman بعد تشغيل API ويطلب كلمة مرور المدير محليًا |
+
 ## التشغيل السريع على Windows
 
 بعد استنساخ المستودع، افتح PowerShell داخل مجلد `CarRental` وتأكد أن ملفات التشغيل بامتداد `.cmd` موجودة في **جذر المستودع**. في أول تشغيل لجهاز جديد شغّل `Setup-CarRental.cmd` مرة واحدة، ثم شغّل النظام من PowerShell بالطريقة التالية:
