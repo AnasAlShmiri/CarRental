@@ -30,10 +30,16 @@ CarRental/
 ├── tests/test_api.sh          # اختبارات HTTP شاملة
 ├── docs/professional_audit.md # سجل التدقيق والإصلاحات
 ├── docs/CarRental.postman_collection.json # مجموعة اختبار API متسلسلة
-├── Run-CarRental.cmd          # تشغيل API ثم MVC وفتح المتصفح
+├── Run-CarRental.cmd          # تشغيل API وMVC معًا وفتح الروابط
 ├── Run-API.cmd                # تشغيل API فقط
 ├── Run-MVC.cmd                # تشغيل لوحة MVC فقط
-└── Run-Mobile.cmd             # تشغيل تطبيق Flutter
+├── Run-Mobile.cmd             # تشغيل تطبيق Flutter
+├── Setup-CarRental.cmd        # استعادة الحزم وبناء .NET وتجهيز Flutter
+├── Run-Tests.cmd              # بناء الحل وتشغيل فحوصات Flutter
+├── Run-API-Tests.cmd          # تشغيل اختبارات HTTP الشاملة
+├── Run-Postman.cmd            # تشغيل مجموعة Newman بعد بدء API
+├── Open-CarRental.cmd         # فتح روابط MVC وSwagger
+└── Stop-CarRental.cmd         # إيقاف API وMVC عبر المنافذ المخصصة
 ```
 
 ## المتطلبات
@@ -44,14 +50,14 @@ CarRental/
 
 ## التشغيل السريع على Windows
 
-بعد استنساخ المستودع، افتح PowerShell داخل مجلد `CarRental` وتأكد أن الملفات `Run-CarRental.cmd` و`Run-API.cmd` و`Run-MVC.cmd` موجودة في **جذر المستودع**. شغّل السكربت من PowerShell بالطريقة التالية:
+بعد استنساخ المستودع، افتح PowerShell داخل مجلد `CarRental` وتأكد أن ملفات التشغيل بامتداد `.cmd` موجودة في **جذر المستودع**. في أول تشغيل لجهاز جديد شغّل `Setup-CarRental.cmd` مرة واحدة، ثم شغّل النظام من PowerShell بالطريقة التالية:
 
 ```powershell
 cd C:\path\to\CarRental
 .\Run-CarRental.cmd
 ```
 
-يشغّل السكربت API على `http://localhost:5109`، ينتظر أن تصبح نقطة `/health` جاهزة، ثم يشغّل لوحة MVC على `http://localhost:5110` ويفتح المتصفح. إذا لم يتعرف Windows على `dotnet` فتأكد من تثبيت .NET SDK وإعادة فتح PowerShell. لا تستخدم `.Run-CarRental.cmd`؛ الصيغة الصحيحة هي ` .\Run-CarRental.cmd` كما في المثال، مع حذف المسافة الموجودة قبل الأمر عند النسخ.
+يشغّل `Run-CarRental.cmd` API على `http://localhost:5109`، ينتظر أن تصبح نقطة `/health` جاهزة، ثم يشغّل لوحة MVC على `http://localhost:5110` ويفتح Swagger وMVC. إذا كانت إحدى الخدمتين تعمل مسبقًا فلن ينشئ السكربت نسخة ثانية منها. إذا لم يتعرف Windows على `dotnet` فتأكد من تثبيت .NET SDK وإعادة فتح PowerShell. لا تستخدم `.Run-CarRental.cmd`؛ الصيغة الصحيحة هي ` .\Run-CarRental.cmd` كما في المثال، مع حذف المسافة الموجودة قبل الأمر عند النسخ.
 
 للتشغيل المنفصل:
 
@@ -60,7 +66,17 @@ cd C:\path\to\CarRental
 .\Run-MVC.cmd
 ```
 
-يجب تشغيل API قبل MVC لأن لوحة الإدارة ترسل طلباتها إلى API. لا تفتح نسخة ثانية من API على المنفذ نفسه؛ إذا ظهر خطأ `address already in use` أغلق النسخة القديمة أو أعد تشغيل الجهاز ثم شغّل السكربت مرة واحدة.
+ويتوفر أيضًا:
+
+```powershell
+.\Open-CarRental.cmd
+.\Run-Postman.cmd
+.\Run-Tests.cmd
+.\Run-API-Tests.cmd
+.\Stop-CarRental.cmd
+```
+
+يجب تشغيل API قبل MVC لأن لوحة الإدارة ترسل طلباتها إلى API. لا تفتح نسخة ثانية من API على المنفذ نفسه؛ `Run-CarRental.cmd` يفحص الجاهزية ويتجنب تشغيل نسخة ثانية. استخدم `Stop-CarRental.cmd` عند الحاجة إلى إيقاف خدمتي المشروع فقط.
 
 ## التشغيل من Visual Studio
 

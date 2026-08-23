@@ -17,6 +17,11 @@
 #   UPLOADS_DIR=CarRental.API/wwwroot/uploads ./tests/test_api.sh   # window 2
 
 BASE="http://127.0.0.1:5109"
+PYTHON_CMD="${PYTHON_CMD:-python3}"
+if ! command -v "$PYTHON_CMD" >/dev/null 2>&1; then
+  echo "Python was not found. Install Python and ensure python3 or python is available."
+  exit 1
+fi
 PASS=0; FAIL=0
 declare -a FAILURES
 
@@ -59,7 +64,7 @@ check() {
 assert_num() {
   local label="$1" path="$2" expected="$3"
   local actual
-  actual=$(python3 -c "
+  actual=$("$PYTHON_CMD" -c "
 import json
 try:
     d=json.load(open('/tmp/_body'))
@@ -68,7 +73,7 @@ except Exception as e:
     print('ERR:'+str(e))
 ")
   local ok
-  ok=$(python3 -c "
+  ok=$("$PYTHON_CMD" -c "
 try: print('1' if abs(float('$actual')-float('$expected'))<0.005 else '0')
 except Exception: print('0')")
   if [ "$ok" = "1" ]; then
@@ -83,7 +88,7 @@ except Exception: print('0')")
 assert_json() {
   local label="$1" path="$2" expected="$3"
   local actual
-  actual=$(python3 -c "
+  actual=$("$PYTHON_CMD" -c "
 import json,sys
 try:
     d=json.load(open('/tmp/_body'))
@@ -100,7 +105,7 @@ except Exception as e:
   fi
 }
 
-jqv() { python3 -c "
+jqv() { "$PYTHON_CMD" -c "
 import json;d=json.load(open('/tmp/_body'));v=d$1
 print(json.dumps(v) if isinstance(v,(dict,list)) else v)"; }
 
@@ -113,7 +118,7 @@ LATER_END=$(date -u -d '+25 days' +%Y-%m-%d)
 YESTERDAY=$(date -u -d '-1 day' +%Y-%m-%d)
 
 # ---- image fixtures (used by Cars form tests) ---------------------------------
-python3 - <<'PYFIX'
+"$PYTHON_CMD" - <<'PYFIX'
 import zlib, struct
 def png(path, w=8, h=8):
     def ch(t,d):
@@ -373,7 +378,7 @@ imgcount() { ls "$UPDIR" 2>/dev/null | grep -cE '\.(png|jpg|jpeg|gif|webp)$'; }
 reqform POST /api/cars "$TOKEN" model=PhotoFail brand=Test pricePerDay=10 image=@/tmp/t_fake.png
 check "Create with text-file-as-.png -> 400 (magic bytes)" 400
 req GET /api/cars
-NOFAIL=$(python3 -c "
+NOFAIL=$("$PYTHON_CMD" -c "
 import json;d=json.load(open('/tmp/_body'))
 print('absent' if all(c['model']!='PhotoFail' for c in d) else 'present')")
 [ "$NOFAIL" = "absent" ] && { PASS=$((PASS+1)); echo -e "  \033[32mPASS\033[0m  Rejected image => car NOT created"; } \
